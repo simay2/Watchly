@@ -89,7 +89,7 @@ const LexiconFlow = () => {
       case 9: return <Page9Surprise value={surprise} onChange={setSurprise} />;
       case 10: return (
         <Page10Results
-          preferences={{ viewerType, genres, mood, companion, time, surprise }}
+          preferences={{ viewerType, genres, mood, companion, time, surprise, dislikes, titleReactions, ratings }}
           onRestart={restart}
         />
       );
