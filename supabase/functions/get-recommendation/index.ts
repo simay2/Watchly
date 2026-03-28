@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { viewerType, genres, mood, companion, time, surprise, dislikes, titleReactions, ratings } = await req.json();
+    const { viewerType, genres, mood, companion, time, surprise, dislikes, titleReactions, ratings, excludeTitles } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -20,7 +20,7 @@ serve(async (req) => {
     }
 
     const likedTitles = Object.entries(titleReactions || {})
-      .filter(([_, reaction]) => reaction === "love" || reaction === "favorite")
+      .filter(([_, reaction]) => reaction === "love" || reaction === "favorite" || reaction === "heart" || reaction === "star")
       .map(([title]) => title);
 
     const skippedTitles = Object.entries(titleReactions || {})
@@ -31,7 +31,12 @@ serve(async (req) => {
       .map(([title, rating]) => `${title}: ${rating}/5`)
       .join(", ");
 
-    const systemPrompt = `You are a movie and TV show recommendation expert. Based on the user's preferences from their "movie diary", suggest 6 personalized recommendations. Return ONLY valid JSON, no markdown. The JSON must be an array of objects with these fields: title (string), year (string), emoji (single emoji representing the movie/show), genre (string like "Comedy / Drama"), rating (number 1-5 with one decimal), description (one sentence why this matches their mood/preferences). Make recommendations diverse and tailored to their specific inputs.`;
+    const excludeList: string[] = excludeTitles || [];
+    const excludeInstruction = excludeList.length > 0
+      ? `\n\nIMPORTANT: Do NOT recommend any of these titles (already shown): ${excludeList.join(", ")}`
+      : "";
+
+    const systemPrompt = `You are a movie and TV show recommendation expert. Based on the user's preferences from their "movie diary", suggest 6 personalized recommendations. Return ONLY valid JSON, no markdown. The JSON must be an array of objects with these fields: title (string), year (string), emoji (single emoji representing the movie/show), genre (string like "Comedy / Drama"), rating (number 1-5 with one decimal), description (one sentence why this matches their mood/preferences). Make recommendations diverse and tailored to their specific inputs.${excludeInstruction}`;
 
     const userPrompt = `Here are my movie diary preferences:
 - I watch: ${viewerType || "movies and TV shows"}
@@ -83,10 +88,8 @@ Please recommend 6 ${viewerType === "TV series only" ? "TV shows" : viewerType =
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
 
-    // Parse the JSON from the AI response
     let recommendations;
     try {
-      // Try to extract JSON from the response (handle potential markdown wrapping)
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         recommendations = JSON.parse(jsonMatch[0]);
