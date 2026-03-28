@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Star, Play, Loader2, RefreshCw } from "lucide-react";
 import PageWrapper from "./PageWrapper";
@@ -41,29 +41,53 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [noMorePicks, setNoMorePicks] = useState(false);
+  const shownTitlesRef = useRef<Set<string>>(new Set());
 
-  const fetchRecommendations = async () => {
+  const addToShown = (recs: Recommendation[]) => {
+    recs.forEach((r) => shownTitlesRef.current.add(r.title.toLowerCase()));
+  };
+
+  const filterDuplicates = (recs: Recommendation[]): Recommendation[] => {
+    return recs.filter((r) => !shownTitlesRef.current.has(r.title.toLowerCase()));
+  };
+
+  const fetchRecommendations = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setNoMorePicks(false);
     try {
+      const excludeTitles = Array.from(shownTitlesRef.current);
+
       const { data, error: fnError } = await supabase.functions.invoke("get-recommendation", {
-        body: preferences,
+        body: { ...preferences, excludeTitles },
       });
 
       if (fnError) throw new Error(fnError.message);
       if (data?.error) throw new Error(data.error);
 
-      setRecommendations(data.recommendations || []);
+      const raw: Recommendation[] = data.recommendations || [];
+      const fresh = filterDuplicates(raw);
+
+      if (fresh.length === 0) {
+        setNoMorePicks(true);
+        return;
+      }
+
+      addToShown(fresh);
+      setRecommendations(fresh);
     } catch (err) {
       console.error("Failed to fetch recommendations:", err);
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
-  };
+  }, [preferences]);
 
   useEffect(() => {
+    shownTitlesRef.current.clear();
     fetchRecommendations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
@@ -91,6 +115,28 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
             className="flex items-center gap-2 bg-primary text-primary-foreground rounded-full px-6 py-3 font-bold font-body"
           >
             <RefreshCw size={16} /> Try again
+          </motion.button>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  if (noMorePicks) {
+    return (
+      <PageWrapper>
+        <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+          <span className="text-5xl">🍿</span>
+          <p className="text-xl font-handwritten text-foreground">
+            No more fresh picks!
+          </p>
+          <p className="text-muted-foreground font-body">Try Start over to explore new tastes ✨</p>
+          <motion.button
+            onClick={onRestart}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="bg-primary text-primary-foreground rounded-full px-8 py-3 font-bold font-body shadow-soft mt-2"
+          >
+            Start over 📖
           </motion.button>
         </div>
       </PageWrapper>

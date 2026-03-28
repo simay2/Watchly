@@ -15,9 +15,7 @@ const WelcomePage = ({ onStart }: WelcomePageProps) => {
       <motion.img
         src={notebookCover}
         alt="My Movie Diary"
-        width={280}
-        height={360}
-        className="mb-8 drop-shadow-xl"
+        className="mb-8 drop-shadow-xl w-[320px] h-auto sm:w-[400px] md:w-[440px]"
         animate={{ rotate: [0, -2, 2, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       />
