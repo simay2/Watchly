@@ -40,47 +40,47 @@ const Page3PickTitles = ({ reactions, onChange }: Page3Props) => {
           <motion.div
             key={t.name}
             whileHover={{ scale: 1.02 }}
-            className="bg-muted/50 rounded-2xl p-4 flex items-center gap-3 border border-border"
+            className="bg-muted/50 rounded-2xl px-3 py-3 flex items-center gap-2 border border-border"
           >
-            <span className="text-2xl">{t.emoji}</span>
+            <span className="text-xl shrink-0">{t.emoji}</span>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold font-body text-foreground text-xs sm:text-sm leading-tight line-clamp-2">{t.name}</p>
-              <p className="text-xs text-muted-foreground">{t.year}</p>
+              <p className="font-semibold font-body text-foreground text-sm leading-snug">{t.name}</p>
+              <p className="text-[11px] text-muted-foreground">{t.year}</p>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-0.5 shrink-0">
               <motion.button
                 whileTap={{ scale: 0.8 }}
                 onClick={() => setReaction(t.name, "heart")}
-                className={`p-1.5 rounded-full transition-colors ${
+                className={`p-1 rounded-full transition-colors ${
                   reactions[t.name] === "heart" ? "bg-coral/30" : "hover:bg-muted"
                 }`}
               >
                 <Heart
-                  size={18}
+                  size={16}
                   className={reactions[t.name] === "heart" ? "fill-coral text-coral" : "text-muted-foreground"}
                 />
               </motion.button>
               <motion.button
                 whileTap={{ scale: 0.8 }}
                 onClick={() => setReaction(t.name, "star")}
-                className={`p-1.5 rounded-full transition-colors ${
+                className={`p-1 rounded-full transition-colors ${
                   reactions[t.name] === "star" ? "bg-sunshine/30" : "hover:bg-muted"
                 }`}
               >
                 <Star
-                  size={18}
+                  size={16}
                   className={reactions[t.name] === "star" ? "fill-sunshine text-sunshine" : "text-muted-foreground"}
                 />
               </motion.button>
               <motion.button
                 whileTap={{ scale: 0.8 }}
                 onClick={() => setReaction(t.name, "skip")}
-                className={`p-1.5 rounded-full transition-colors ${
+                className={`p-1 rounded-full transition-colors ${
                   reactions[t.name] === "skip" ? "bg-muted" : "hover:bg-muted"
                 }`}
               >
                 <SkipForward
-                  size={18}
+                  size={16}
                   className={reactions[t.name] === "skip" ? "text-foreground" : "text-muted-foreground"}
                 />
               </motion.button>
