@@ -44,7 +44,7 @@ const Page3PickTitles = ({ reactions, onChange }: Page3Props) => {
           >
             <span className="text-2xl">{t.emoji}</span>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold font-body text-foreground text-sm truncate">{t.name}</p>
+              <p className="font-semibold font-body text-foreground text-xs sm:text-sm leading-tight line-clamp-2">{t.name}</p>
               <p className="text-xs text-muted-foreground">{t.year}</p>
             </div>
             <div className="flex gap-1">
