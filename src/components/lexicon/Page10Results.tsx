@@ -12,6 +12,7 @@ interface Recommendation {
   rating: number;
   description: string;
   image?: string;
+  trailerUrl?: string;
 }
 
 interface Page10Props {
@@ -108,8 +109,11 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
 
   const closeModal = () => setSelectedRec(null);
 
-  const searchTrailer = (title: string, year: string) => {
-    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(title + " " + year + " official trailer")}`, "_blank", "noopener,noreferrer");
+  const openTrailer = (rec: Recommendation) => {
+    const url = rec.trailerUrl
+      ? rec.trailerUrl
+      : `https://www.youtube.com/results?search_query=${encodeURIComponent(rec.title + " " + rec.year + " official trailer")}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   if (loading) {
@@ -322,7 +326,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => searchTrailer(selectedRec.title, selectedRec.year)}
+                  onClick={() => openTrailer(selectedRec)}
                   className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-full py-3 font-bold font-body shadow-soft"
                 >
                   <Play size={16} className="fill-current" />
