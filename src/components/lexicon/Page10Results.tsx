@@ -12,6 +12,7 @@ interface Recommendation {
   rating: number;
   description: string;
   image?: string;
+  trailerUrl?: string;
 }
 
 interface Page10Props {
@@ -108,8 +109,11 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
 
   const closeModal = () => setSelectedRec(null);
 
-  const searchTrailer = (title: string, year: string) => {
-    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(title + " " + year + " official trailer")}`, "_blank", "noopener,noreferrer");
+  const openTrailer = (rec: Recommendation) => {
+    const url = rec.trailerUrl
+      ? rec.trailerUrl
+      : `https://www.youtube.com/results?search_query=${encodeURIComponent(rec.title + " " + rec.year + " official trailer")}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   if (loading) {
