@@ -326,7 +326,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => searchTrailer(selectedRec.title, selectedRec.year)}
+                  onClick={() => openTrailer(selectedRec)}
                   className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-full py-3 font-bold font-body shadow-soft"
                 >
                   <Play size={16} className="fill-current" />
