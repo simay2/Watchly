@@ -109,7 +109,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
   const closeModal = () => setSelectedRec(null);
 
   const searchTrailer = (title: string, year: string) => {
-    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(title + " " + year + " official trailer")}`, "_blank");
+    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(title + " " + year + " official trailer")}`, "_blank", "noopener,noreferrer");
   };
 
   if (loading) {
