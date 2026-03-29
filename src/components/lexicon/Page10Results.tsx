@@ -278,11 +278,12 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
                     }}
                   />
                 ) : null}
-                {/* Fallback gradient poster */}
+                {/* Fallback gradient poster with title */}
                 <div
-                  className={`${selectedRec.image ? "hidden" : ""} w-full h-full bg-gradient-to-br ${placeholderColors[selectedIndex % placeholderColors.length]} flex items-center justify-center`}
+                  className={`${selectedRec.image ? "hidden" : ""} w-full h-full bg-gradient-to-br ${placeholderColors[selectedIndex % placeholderColors.length]} flex flex-col items-center justify-center px-6 text-center gap-2`}
                 >
-                  <span className="text-7xl">{selectedRec.emoji}</span>
+                  <span className="text-2xl font-handwritten text-foreground/70 leading-tight">{selectedRec.title}</span>
+                  <span className="text-sm font-body text-muted-foreground">{selectedRec.year}</span>
                 </div>
                 {/* Gradient overlay at bottom */}
                 <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-card to-transparent" />
