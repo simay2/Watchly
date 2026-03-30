@@ -4,6 +4,8 @@ import { Star, Play, Loader2, RefreshCw, X, ExternalLink, Heart } from "lucide-r
 import PageWrapper from "./PageWrapper";
 import SwipeCard from "./SwipeCard";
 import SavedList from "./SavedList";
+import TasteProfile from "./TasteProfile";
+import { useTasteProfile } from "@/hooks/useTasteProfile";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Recommendation {
@@ -51,6 +53,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
   const [saved, setSaved] = useState<Recommendation[]>([]);
   const [swipeFeedback, setSwipeFeedback] = useState<"like" | "skip" | null>(null);
   const shownTitlesRef = useRef<Set<string>>(new Set());
+  const { profile, swipeContext, recordLike, recordDislike, reset: resetTaste } = useTasteProfile();
 
   const addToShown = (recs: Recommendation[]) => {
     recs.forEach((r) => shownTitlesRef.current.add(r.title.toLowerCase()));
@@ -67,7 +70,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
     try {
       const excludeTitles = Array.from(shownTitlesRef.current);
       const { data, error: fnError } = await supabase.functions.invoke("get-recommendation", {
-        body: { ...preferences, excludeTitles },
+        body: { ...preferences, excludeTitles, swipeContext },
       });
 
       if (fnError) throw new Error(fnError.message);
@@ -89,7 +92,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
     } finally {
       setLoading(false);
     }
-  }, [preferences]);
+  }, [preferences, swipeContext]);
 
   useEffect(() => {
     shownTitlesRef.current.clear();
@@ -99,16 +102,20 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
 
   const handleSwipeRight = () => {
     if (recommendations.length === 0) return;
-    const liked = recommendations[0];
+    const likedItem = recommendations[0];
     setSaved((prev) =>
-      prev.some((s) => s.title === liked.title) ? prev : [...prev, liked]
+      prev.some((s) => s.title === likedItem.title) ? prev : [...prev, likedItem]
     );
+    recordLike(likedItem);
     setSwipeFeedback("like");
     setTimeout(() => setSwipeFeedback(null), 600);
     advanceCard();
   };
 
   const handleSwipeLeft = () => {
+    if (recommendations.length > 0) {
+      recordDislike(recommendations[0]);
+    }
     setSwipeFeedback("skip");
     setTimeout(() => setSwipeFeedback(null), 600);
     advanceCard();
@@ -293,6 +300,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
           </motion.button>
         </div>
 
+        <TasteProfile profile={profile} />
         <SavedList saved={saved} onOpenDetail={openModal} />
 
         <div className="mt-3 text-center text-2xl animate-float">

@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { viewerType, genres, mood, companion, time, surprise, dislikes, titleReactions, ratings, excludeTitles } = await req.json();
+    const { viewerType, genres, mood, companion, time, surprise, dislikes, titleReactions, ratings, excludeTitles, swipeContext } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -36,7 +36,17 @@ serve(async (req) => {
       ? `\n\nIMPORTANT: Do NOT recommend any of these titles (already shown): ${excludeList.join(", ")}`
       : "";
 
-    const systemPrompt = `You are a movie and TV show recommendation expert. Based on the user's preferences from their "movie diary", suggest 6 personalized recommendations. Return ONLY valid JSON, no markdown. The JSON must be an array of objects with these fields: title (string), year (string), emoji (single emoji representing the movie/show), genre (string like "Comedy / Drama"), rating (number 1-5 with one decimal), description (one sentence why this matches their mood/preferences), image (a real, working poster image URL — use known TMDB poster paths like "https://image.tmdb.org/t/p/w500/<real_poster_filename>.jpg" where <real_poster_filename> is the actual TMDB poster path for that specific movie/show. Only provide a URL if you are confident it is the correct TMDB poster path for that exact title. If you are not sure of the exact poster path, use an empty string ""), trailerUrl (a YouTube URL to the official trailer - use the format "https://www.youtube.com/watch?v=" followed by the known YouTube video ID for the official trailer, OR if unsure use an empty string). Make recommendations diverse and tailored to their specific inputs.${excludeInstruction}`;
+    const swipeInstruction = swipeContext
+      ? `\n\nSWIPE FEEDBACK FROM USER:
+- Liked titles: ${(swipeContext.likedTitles || []).join(", ") || "none yet"}
+- Disliked titles: ${(swipeContext.dislikedTitles || []).join(", ") || "none yet"}
+- Preferred genres: ${(swipeContext.preferredGenres || []).join(", ") || "not enough data"}
+- Genres to avoid: ${(swipeContext.avoidGenres || []).join(", ") || "none"}
+- Average preferred rating: ${swipeContext.avgPreferredRating || "N/A"}
+Use this feedback to heavily weight recommendations toward their preferred genres and away from disliked genres. Prioritize content similar to liked titles.`
+      : "";
+
+    const systemPrompt = `You are a movie and TV show recommendation expert. Based on the user's preferences from their "movie diary", suggest 6 personalized recommendations. Return ONLY valid JSON, no markdown. The JSON must be an array of objects with these fields: title (string), year (string), emoji (single emoji representing the movie/show), genre (string like "Comedy / Drama"), rating (number 1-5 with one decimal), description (one sentence why this matches their mood/preferences), image (a real, working poster image URL — use known TMDB poster paths like "https://image.tmdb.org/t/p/w500/<real_poster_filename>.jpg" where <real_poster_filename> is the actual TMDB poster path for that specific movie/show. Only provide a URL if you are confident it is the correct TMDB poster path for that exact title. If you are not sure of the exact poster path, use an empty string ""), trailerUrl (a YouTube URL to the official trailer - use the format "https://www.youtube.com/watch?v=" followed by the known YouTube video ID for the official trailer, OR if unsure use an empty string). Make recommendations diverse and tailored to their specific inputs.${excludeInstruction}${swipeInstruction}`;
 
     const userPrompt = `Here are my movie diary preferences:
 - I watch: ${viewerType || "movies and TV shows"}
