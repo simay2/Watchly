@@ -79,7 +79,7 @@ export function useTasteProfile() {
 
     const sorted = Object.entries(genreScores).sort(([, a], [, b]) => b - a);
     const topGenres = sorted.filter(([, v]) => v > 0).map(([k]) => k).slice(0, 5);
-    const bottomGenres = sorted.filter(([, v]) => v < 0).map(([k]) => k).slice(-3).map(([k]) => k);
+    const bottomGenres = sorted.filter(([, v]) => v < 0).slice(-3).map(([k]) => k);
 
     const avgLikedRating =
       liked.length > 0
