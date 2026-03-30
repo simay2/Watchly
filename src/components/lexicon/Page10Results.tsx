@@ -4,6 +4,8 @@ import { Star, Play, Loader2, RefreshCw, X, ExternalLink, Heart } from "lucide-r
 import PageWrapper from "./PageWrapper";
 import SwipeCard from "./SwipeCard";
 import SavedList from "./SavedList";
+import TasteProfile from "./TasteProfile";
+import { useTasteProfile } from "@/hooks/useTasteProfile";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Recommendation {
