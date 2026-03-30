@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Play, Loader2, RefreshCw, X, ExternalLink } from "lucide-react";
+import { Star, Play, Loader2, RefreshCw, X, ExternalLink, Heart } from "lucide-react";
 import PageWrapper from "./PageWrapper";
+import SwipeCard from "./SwipeCard";
+import SavedList from "./SavedList";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Recommendation {
@@ -30,15 +32,6 @@ interface Page10Props {
   onRestart: () => void;
 }
 
-const colorClasses = [
-  "bg-lavender/20 border-lavender",
-  "bg-coral/20 border-coral",
-  "bg-mint/20 border-mint",
-  "bg-sunshine/20 border-sunshine",
-  "bg-sky/20 border-sky",
-  "bg-peach/20 border-peach",
-];
-
 const placeholderColors = [
   "from-lavender/40 to-secondary/30",
   "from-coral/40 to-peach/30",
@@ -55,6 +48,8 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
   const [noMorePicks, setNoMorePicks] = useState(false);
   const [selectedRec, setSelectedRec] = useState<Recommendation | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [saved, setSaved] = useState<Recommendation[]>([]);
+  const [swipeFeedback, setSwipeFeedback] = useState<"like" | "skip" | null>(null);
   const shownTitlesRef = useRef<Set<string>>(new Set());
 
   const addToShown = (recs: Recommendation[]) => {
@@ -102,6 +97,33 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleSwipeRight = () => {
+    if (recommendations.length === 0) return;
+    const liked = recommendations[0];
+    setSaved((prev) =>
+      prev.some((s) => s.title === liked.title) ? prev : [...prev, liked]
+    );
+    setSwipeFeedback("like");
+    setTimeout(() => setSwipeFeedback(null), 600);
+    advanceCard();
+  };
+
+  const handleSwipeLeft = () => {
+    setSwipeFeedback("skip");
+    setTimeout(() => setSwipeFeedback(null), 600);
+    advanceCard();
+  };
+
+  const advanceCard = () => {
+    setRecommendations((prev) => {
+      const next = prev.slice(1);
+      if (next.length === 0) {
+        fetchRecommendations();
+      }
+      return next;
+    });
+  };
+
   const openModal = (rec: Recommendation, index: number) => {
     setSelectedRec(rec);
     setSelectedIndex(index);
@@ -147,7 +169,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
     );
   }
 
-  if (noMorePicks) {
+  if (noMorePicks && recommendations.length === 0) {
     return (
       <PageWrapper>
         <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
@@ -162,6 +184,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
           >
             Start over 📖
           </motion.button>
+          <SavedList saved={saved} onOpenDetail={openModal} />
         </div>
       </PageWrapper>
     );
@@ -170,70 +193,109 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
   return (
     <>
       <PageWrapper>
-        <h2 className="text-3xl sm:text-4xl font-handwritten text-center mb-2">
+        <h2 className="text-3xl sm:text-4xl font-handwritten text-center mb-1">
           Your recommendations! 🎉
         </h2>
-        <p className="text-center text-muted-foreground mb-6 font-body">
-          Based on your diary, here's what we found ✨
+        <p className="text-center text-muted-foreground mb-4 font-body text-sm">
+          Swipe right to save, left to skip ✨
         </p>
-        <div className="flex flex-col gap-3">
-          {recommendations.map((rec, i) => (
+
+        {/* Swipe feedback toast */}
+        <AnimatePresence>
+          {swipeFeedback && (
             <motion.div
-              key={rec.title}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.15 }}
-              className={`rounded-2xl p-4 border-2 ${colorClasses[i % colorClasses.length]} flex items-start gap-3 cursor-pointer hover:shadow-md transition-shadow`}
-              onClick={() => openModal(rec, i)}
+              initial={{ opacity: 0, y: -10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10 }}
+              className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full font-bold font-body text-sm shadow-soft ${
+                swipeFeedback === "like"
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
             >
-              <span className="text-3xl mt-1">{rec.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold font-body text-foreground truncate">{rec.title}</p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>{rec.year}</span>
-                  <span>•</span>
-                  <span>{rec.genre}</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{rec.description}</p>
-              </div>
-              <div className="flex flex-col items-center gap-1 shrink-0">
-                <div className="flex items-center gap-1">
-                  <Star size={14} className="fill-sunshine text-sunshine" />
-                  <span className="text-sm font-bold text-foreground">{rec.rating}</span>
-                </div>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openModal(rec, i);
-                  }}
-                  className="p-1.5 rounded-full bg-primary/10 hover:bg-primary/20"
-                >
-                  <Play size={14} className="text-primary" />
-                </motion.button>
-              </div>
+              {swipeFeedback === "like" ? (
+                <span className="flex items-center gap-1.5">
+                  <Heart size={14} className="fill-current" /> Saved!
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <X size={14} /> Skipped
+                </span>
+              )}
             </motion.div>
-          ))}
+          )}
+        </AnimatePresence>
+
+        {/* Card stack */}
+        <div className="relative w-full max-w-sm mx-auto" style={{ height: 440 }}>
+          {/* Paper texture background */}
+          <div className="absolute inset-0 -m-3 rounded-[2rem] bg-muted/40 border border-border/50" />
+
+          <AnimatePresence>
+            {recommendations
+              .slice(0, 3)
+              .reverse()
+              .map((rec, reverseI) => {
+                const actualIndex = recommendations.slice(0, 3).length - 1 - reverseI;
+                return (
+                  <SwipeCard
+                    key={rec.title}
+                    rec={rec}
+                    index={actualIndex}
+                    totalCards={Math.min(recommendations.length, 3)}
+                    onSwipeLeft={handleSwipeLeft}
+                    onSwipeRight={handleSwipeRight}
+                    onClick={() => openModal(rec, actualIndex)}
+                    isTop={actualIndex === 0}
+                  />
+                );
+              })}
+          </AnimatePresence>
         </div>
-        <div className="mt-6 flex justify-center gap-3">
+
+        {/* Action buttons */}
+        <div className="flex justify-center gap-6 mt-5">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleSwipeLeft}
+            className="p-4 rounded-full bg-muted border-2 border-border shadow-card text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <X size={22} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleSwipeRight}
+            className="p-4 rounded-full bg-primary/10 border-2 border-primary/30 shadow-card text-primary hover:bg-primary/20 transition-colors"
+          >
+            <Heart size={22} />
+          </motion.button>
+        </div>
+
+        {/* Bottom controls */}
+        <div className="mt-5 flex justify-center gap-3">
           <motion.button
             onClick={fetchRecommendations}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-muted text-foreground rounded-full px-6 py-3 font-bold font-body flex items-center gap-2"
+            className="bg-muted text-foreground rounded-full px-5 py-2.5 font-bold font-body text-sm flex items-center gap-2"
           >
-            <RefreshCw size={16} /> New picks
+            <RefreshCw size={14} /> New picks
           </motion.button>
           <motion.button
             onClick={onRestart}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-primary text-primary-foreground rounded-full px-8 py-3 font-bold font-body shadow-soft"
+            className="bg-primary text-primary-foreground rounded-full px-6 py-2.5 font-bold font-body text-sm shadow-soft"
           >
             Start over 📖
           </motion.button>
         </div>
-        <div className="mt-4 text-center text-2xl animate-float">
+
+        <SavedList saved={saved} onOpenDetail={openModal} />
+
+        <div className="mt-3 text-center text-2xl animate-float">
           🍿 🎬 ⭐ 💖
         </div>
       </PageWrapper>
@@ -256,7 +318,6 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
               className="bg-card rounded-3xl shadow-lg max-w-sm w-full overflow-hidden relative"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close button */}
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={closeModal}
@@ -265,7 +326,6 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
                 <X size={18} />
               </motion.button>
 
-              {/* Poster area */}
               <div className="relative w-full h-48 sm:h-56 overflow-hidden">
                 {selectedRec.image ? (
                   <img
@@ -278,18 +338,15 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
                     }}
                   />
                 ) : null}
-                {/* Fallback gradient poster with title */}
                 <div
                   className={`${selectedRec.image ? "hidden" : ""} w-full h-full bg-gradient-to-br ${placeholderColors[selectedIndex % placeholderColors.length]} flex flex-col items-center justify-center px-6 text-center gap-2`}
                 >
                   <span className="text-2xl font-handwritten text-foreground/70 leading-tight">{selectedRec.title}</span>
                   <span className="text-sm font-body text-muted-foreground">{selectedRec.year}</span>
                 </div>
-                {/* Gradient overlay at bottom */}
                 <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-card to-transparent" />
               </div>
 
-              {/* Content */}
               <div className="p-5 pt-2 -mt-4 relative z-10">
                 <h3 className="text-2xl font-handwritten text-foreground mb-1">
                   {selectedRec.emoji} {selectedRec.title}
@@ -300,7 +357,6 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
                   <span>{selectedRec.genre}</span>
                 </div>
 
-                {/* Rating */}
                 <div className="flex items-center gap-1.5 mb-3">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
@@ -318,12 +374,10 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
                   </span>
                 </div>
 
-                {/* Description */}
                 <p className="text-sm text-muted-foreground font-body leading-relaxed mb-4">
                   {selectedRec.description}
                 </p>
 
-                {/* Watch trailer button */}
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
