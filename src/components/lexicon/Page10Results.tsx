@@ -70,7 +70,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
     try {
       const excludeTitles = Array.from(shownTitlesRef.current);
       const { data, error: fnError } = await supabase.functions.invoke("get-recommendation", {
-        body: { ...preferences, excludeTitles },
+        body: { ...preferences, excludeTitles, swipeContext },
       });
 
       if (fnError) throw new Error(fnError.message);
