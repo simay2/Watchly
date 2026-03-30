@@ -92,7 +92,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
     } finally {
       setLoading(false);
     }
-  }, [preferences]);
+  }, [preferences, swipeContext]);
 
   useEffect(() => {
     shownTitlesRef.current.clear();
