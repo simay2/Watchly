@@ -53,6 +53,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
   const [saved, setSaved] = useState<Recommendation[]>([]);
   const [swipeFeedback, setSwipeFeedback] = useState<"like" | "skip" | null>(null);
   const shownTitlesRef = useRef<Set<string>>(new Set());
+  const { profile, swipeContext, recordLike, recordDislike, reset: resetTaste } = useTasteProfile();
 
   const addToShown = (recs: Recommendation[]) => {
     recs.forEach((r) => shownTitlesRef.current.add(r.title.toLowerCase()));
