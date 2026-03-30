@@ -102,10 +102,11 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
 
   const handleSwipeRight = () => {
     if (recommendations.length === 0) return;
-    const liked = recommendations[0];
+    const likedItem = recommendations[0];
     setSaved((prev) =>
-      prev.some((s) => s.title === liked.title) ? prev : [...prev, liked]
+      prev.some((s) => s.title === likedItem.title) ? prev : [...prev, likedItem]
     );
+    recordLike(likedItem);
     setSwipeFeedback("like");
     setTimeout(() => setSwipeFeedback(null), 600);
     advanceCard();
