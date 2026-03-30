@@ -300,6 +300,7 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
           </motion.button>
         </div>
 
+        <TasteProfile profile={profile} />
         <SavedList saved={saved} onOpenDetail={openModal} />
 
         <div className="mt-3 text-center text-2xl animate-float">
