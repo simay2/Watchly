@@ -113,6 +113,9 @@ const Page10Results = ({ preferences, onRestart }: Page10Props) => {
   };
 
   const handleSwipeLeft = () => {
+    if (recommendations.length > 0) {
+      recordDislike(recommendations[0]);
+    }
     setSwipeFeedback("skip");
     setTimeout(() => setSwipeFeedback(null), 600);
     advanceCard();
