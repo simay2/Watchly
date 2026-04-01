@@ -13,6 +13,7 @@ import Page7Time from "./Page7Time";
 import Page8Ratings from "./Page8Ratings";
 import Page9Surprise from "./Page9Surprise";
 import Page10Results from "./Page10Results";
+import UserMenu from "@/components/UserMenu";
 
 const TOTAL_PAGES = 10;
 
