@@ -100,6 +100,7 @@ const LexiconFlow = () => {
 
   return (
     <div className="min-h-screen flex flex-col px-4 py-6">
+      <UserMenu />
       {/* Decorative floating stickers */}
       <div className="fixed top-4 left-4 text-2xl opacity-40 animate-float pointer-events-none">⭐</div>
       <div className="fixed top-12 right-6 text-xl opacity-30 animate-float pointer-events-none" style={{ animationDelay: "1s" }}>💖</div>
