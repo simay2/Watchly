@@ -145,6 +145,13 @@ const Signup = () => {
               </div>
             </div>
 
+            <div>
+              <div ref={turnstileRef} className="flex justify-center" />
+              {!captchaToken && (
+                <p className="text-xs text-muted-foreground text-center mt-2">Please verify you are human</p>
+              )}
+            </div>
+
             <motion.button
               type="submit"
               disabled={loading}
