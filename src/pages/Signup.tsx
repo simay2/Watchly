@@ -1,21 +1,49 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const TURNSTILE_SITE_KEY = "0x4AAAAAAC0EthQ5ukk6osjV";
+
 const Signup = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.onload = () => {
+      if (turnstileRef.current && (window as any).turnstile) {
+        (window as any).turnstile.render(turnstileRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token: string) => setCaptchaToken(token),
+          "expired-callback": () => setCaptchaToken(null),
+          theme: "light",
+        });
+      }
+    };
+    document.head.appendChild(script);
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !email.trim() || !password) return;
+    if (!captchaToken) {
+      toast({ title: "Verification required", description: "Please verify you are human.", variant: "destructive" });
+      return;
+    }
 
     setLoading(true);
 
@@ -115,6 +143,13 @@ const Signup = () => {
                   minLength={6}
                 />
               </div>
+            </div>
+
+            <div>
+              <div ref={turnstileRef} className="flex justify-center" />
+              {!captchaToken && (
+                <p className="text-xs text-muted-foreground text-center mt-2">Please verify you are human</p>
+              )}
             </div>
 
             <motion.button
