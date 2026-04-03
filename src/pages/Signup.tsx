@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+const TURNSTILE_SITE_KEY = "0x4AAAAAAC0EthQ5ukk6osjV";
 
 const Signup = () => {
   const [username, setUsername] = useState("");
