@@ -39,6 +39,7 @@ const Signup = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     if (!username.trim() || !email.trim() || !password) return;
     if (!captchaToken) {
       toast({ title: "Verification required", description: "Please verify you are human.", variant: "destructive" });
@@ -47,42 +48,49 @@ const Signup = () => {
 
     setLoading(true);
 
-    // Sign up with Supabase Auth
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-    });
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/secure-signup`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: username.trim(),
+            email: email.trim(),
+            password,
+            captchaToken,
+          }),
+        }
+      );
 
-    if (error) {
-      setLoading(false);
-      toast({ title: "Signup failed", description: error.message, variant: "destructive" });
-      return;
-    }
+      const data = await res.json();
 
-    // Create profile
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({ id: data.user.id, username: username.trim() });
-
-      if (profileError) {
+      if (!res.ok) {
+        toast({ title: "Signup failed", description: data.error || "Something went wrong.", variant: "destructive" });
         setLoading(false);
-        toast({
-          title: "Profile creation failed",
-          description: profileError.message.includes("unique")
-            ? "That username is already taken. Please choose another."
-            : profileError.message,
-          variant: "destructive",
-        });
         return;
       }
+
+      // Sign in the newly created user
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (signInError) {
+        toast({ title: "Account created!", description: "Please log in with your credentials." });
+        navigate("/login");
+      } else {
+        toast({ title: "Welcome! 🎬", description: "Your movie diary is ready." });
+        navigate("/");
+      }
+    } catch {
+      toast({ title: "Signup failed", description: "Network error. Please try again.", variant: "destructive" });
     }
 
     setLoading(false);
-    toast({ title: "Welcome! 🎬", description: "Your movie diary is ready." });
-    navigate("/");
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-background">
       <motion.div
