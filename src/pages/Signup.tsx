@@ -40,6 +40,10 @@ const Signup = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !email.trim() || !password) return;
+    if (!captchaToken) {
+      toast({ title: "Verification required", description: "Please verify you are human.", variant: "destructive" });
+      return;
+    }
 
     setLoading(true);
 
