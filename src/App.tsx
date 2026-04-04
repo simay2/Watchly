@@ -4,10 +4,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import Index from "./pages/Index.tsx";
-import Login from "./pages/Login.tsx";
-import Signup from "./pages/Signup.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import AppNav from "@/components/AppNav";
+import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Onboarding from "./pages/Onboarding";
+import Favorites from "./pages/Favorites";
+import SwipeHistory from "./pages/SwipeHistory";
+import Preferences from "./pages/Preferences";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +30,13 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => (
+  <>
+    <AppNav />
+    <div className="pt-14 pb-16">{children}</div>
+  </>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -33,9 +45,13 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><AuthenticatedLayout><Index /></AuthenticatedLayout></ProtectedRoute>} />
+            <Route path="/favorites" element={<ProtectedRoute><AuthenticatedLayout><Favorites /></AuthenticatedLayout></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><AuthenticatedLayout><SwipeHistory /></AuthenticatedLayout></ProtectedRoute>} />
+            <Route path="/preferences" element={<ProtectedRoute><AuthenticatedLayout><Preferences /></AuthenticatedLayout></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
