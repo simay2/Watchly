@@ -14,21 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorites: {
+        Row: {
+          created_at: string
+          description: string | null
+          emoji: string | null
+          genre: string | null
+          id: string
+          image: string | null
+          rating: number | null
+          title: string
+          trailer_url: string | null
+          user_id: string
+          year: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          genre?: string | null
+          id?: string
+          image?: string | null
+          rating?: number | null
+          title: string
+          trailer_url?: string | null
+          user_id: string
+          year?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          genre?: string | null
+          id?: string
+          image?: string | null
+          rating?: number | null
+          title?: string
+          trailer_url?: string | null
+          user_id?: string
+          year?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
           id: string
+          onboarding_completed: boolean
           username: string
         }
         Insert: {
           created_at?: string | null
           id: string
+          onboarding_completed?: boolean
           username: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          onboarding_completed?: boolean
           username?: string
+        }
+        Relationships: []
+      }
+      swipe_history: {
+        Row: {
+          action: string
+          created_at: string
+          description: string | null
+          emoji: string | null
+          genre: string | null
+          id: string
+          image: string | null
+          rating: number | null
+          title: string
+          trailer_url: string | null
+          user_id: string
+          year: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          genre?: string | null
+          id?: string
+          image?: string | null
+          rating?: number | null
+          title: string
+          trailer_url?: string | null
+          user_id: string
+          year?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          genre?: string | null
+          id?: string
+          image?: string | null
+          rating?: number | null
+          title?: string
+          trailer_url?: string | null
+          user_id?: string
+          year?: string | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          companion: string | null
+          created_at: string
+          dislikes: string[] | null
+          genres: string[] | null
+          id: string
+          mood: string | null
+          ratings: Json | null
+          surprise: string | null
+          time: string | null
+          title_reactions: Json | null
+          updated_at: string
+          user_id: string
+          viewer_type: string | null
+        }
+        Insert: {
+          companion?: string | null
+          created_at?: string
+          dislikes?: string[] | null
+          genres?: string[] | null
+          id?: string
+          mood?: string | null
+          ratings?: Json | null
+          surprise?: string | null
+          time?: string | null
+          title_reactions?: Json | null
+          updated_at?: string
+          user_id: string
+          viewer_type?: string | null
+        }
+        Update: {
+          companion?: string | null
+          created_at?: string
+          dislikes?: string[] | null
+          genres?: string[] | null
+          id?: string
+          mood?: string | null
+          ratings?: Json | null
+          surprise?: string | null
+          time?: string | null
+          title_reactions?: Json | null
+          updated_at?: string
+          user_id?: string
+          viewer_type?: string | null
         }
         Relationships: []
       }
