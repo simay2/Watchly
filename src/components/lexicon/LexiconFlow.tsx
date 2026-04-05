@@ -69,6 +69,7 @@ const LexiconFlow = () => {
     setDislikes([]);
     setMood(null);
     setCompanion(null);
+    setCompanionContext(null);
     setTime(null);
     setRatings({});
     setSurprise(null);
