@@ -25,6 +25,7 @@ interface Page10Props {
     genres: string[];
     mood: string | null;
     companion: string | null;
+    companionContext?: string | null;
     time: string | null;
     surprise: string | null;
     dislikes: string[];

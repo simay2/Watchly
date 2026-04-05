@@ -62,6 +62,7 @@ const Recommendations = () => {
           dislikes: prefs.dislikes || [],
           mood: prefs.mood,
           companion: prefs.companion,
+          companionContext: prefs.companion_context,
           time: prefs.time,
           surprise: prefs.surprise,
           titleReactions: prefs.title_reactions || {},
