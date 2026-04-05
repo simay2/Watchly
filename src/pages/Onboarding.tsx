@@ -63,6 +63,7 @@ const Onboarding = () => {
         dislikes,
         mood,
         companion,
+        companion_context: companionContext,
         time,
         surprise,
         ratings,
