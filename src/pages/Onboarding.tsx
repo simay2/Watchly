@@ -31,6 +31,7 @@ const Onboarding = () => {
   const [dislikes, setDislikes] = useState<string[]>([]);
   const [mood, setMood] = useState<string | null>(null);
   const [companion, setCompanion] = useState<string | null>(null);
+  const [companionContext, setCompanionContext] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [surprise, setSurprise] = useState<string | null>(null);
