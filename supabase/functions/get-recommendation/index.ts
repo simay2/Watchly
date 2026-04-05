@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { viewerType, genres, mood, companion, time, surprise, dislikes, titleReactions, ratings, excludeTitles, swipeContext } = await req.json();
+    const { viewerType, genres, mood, companion, companionContext, time, surprise, dislikes, titleReactions, ratings, excludeTitles, swipeContext } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -55,7 +55,7 @@ Use this feedback to heavily weight recommendations toward their preferred genre
 - Titles I skipped: ${skippedTitles.join(", ") || "none"}
 - Things I dislike: ${(dislikes || []).join(", ") || "nothing specific"}
 - My current mood: ${mood || "not specified"}
-- Watching with: ${companion || "not specified"}
+- Watching with: ${companion || "not specified"}${companionContext ? ` (vibe: ${companionContext})` : ""}
 - Time available: ${time || "not specified"}
 - My ratings: ${ratedTitles || "none"}
 - I want: ${surprise || "popular picks"}

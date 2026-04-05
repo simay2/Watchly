@@ -28,6 +28,7 @@ const LexiconFlow = () => {
   const [dislikes, setDislikes] = useState<string[]>([]);
   const [mood, setMood] = useState<string | null>(null);
   const [companion, setCompanion] = useState<string | null>(null);
+  const [companionContext, setCompanionContext] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [surprise, setSurprise] = useState<string | null>(null);
@@ -39,7 +40,7 @@ const LexiconFlow = () => {
       case 3: return Object.keys(titleReactions).length > 0;
       case 4: return true;
       case 5: return !!mood;
-      case 6: return !!companion;
+      case 6: return !!companion && !!companionContext;
       case 7: return !!time;
       case 8: return Object.keys(ratings).length > 0;
       case 9: return !!surprise;
@@ -68,6 +69,7 @@ const LexiconFlow = () => {
     setDislikes([]);
     setMood(null);
     setCompanion(null);
+    setCompanionContext(null);
     setTime(null);
     setRatings({});
     setSurprise(null);
@@ -84,13 +86,13 @@ const LexiconFlow = () => {
       case 3: return <Page3PickTitles reactions={titleReactions} onChange={setTitleReactions} />;
       case 4: return <Page4Dislikes selected={dislikes} onChange={setDislikes} />;
       case 5: return <Page5Mood value={mood} onChange={setMood} />;
-      case 6: return <Page6Companion value={companion} onChange={setCompanion} />;
+      case 6: return <Page6Companion value={companion} context={companionContext} onChange={setCompanion} onContextChange={setCompanionContext} />;
       case 7: return <Page7Time value={time} onChange={setTime} />;
       case 8: return <Page8Ratings ratings={ratings} onChange={setRatings} />;
       case 9: return <Page9Surprise value={surprise} onChange={setSurprise} />;
       case 10: return (
         <Page10Results
-          preferences={{ viewerType, genres, mood, companion, time, surprise, dislikes, titleReactions, ratings }}
+          preferences={{ viewerType, genres, mood, companion, companionContext, time, surprise, dislikes, titleReactions, ratings }}
           onRestart={restart}
         />
       );
