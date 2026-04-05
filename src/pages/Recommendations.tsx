@@ -311,9 +311,12 @@ const Recommendations = () => {
           <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={handleSwipeRight} className="p-4 rounded-full bg-primary/10 border-2 border-primary/30 shadow-card text-primary hover:bg-primary/20 transition-colors"><Heart size={22} /></motion.button>
         </div>
 
-        <div className="mt-5 flex justify-center">
+        <div className="mt-5 flex justify-center gap-3">
           <motion.button onClick={fetchRecommendations} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-muted text-foreground rounded-full px-5 py-2.5 font-bold font-body text-sm flex items-center gap-2">
             <RefreshCw size={14} /> New picks
+          </motion.button>
+          <motion.button onClick={resetSession} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-accent/20 text-accent-foreground rounded-full px-5 py-2.5 font-bold font-body text-sm flex items-center gap-2 border border-accent/30">
+            <Sparkles size={14} /> Change vibe
           </motion.button>
         </div>
 
