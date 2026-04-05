@@ -56,6 +56,7 @@ const App = () => (
             <Route path="/preferences" element={<ProtectedRoute><AuthenticatedLayout><Preferences /></AuthenticatedLayout></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </SessionProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
