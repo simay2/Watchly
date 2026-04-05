@@ -109,7 +109,7 @@ const Onboarding = () => {
       case 3: return <Page3PickTitles reactions={titleReactions} onChange={setTitleReactions} />;
       case 4: return <Page4Dislikes selected={dislikes} onChange={setDislikes} />;
       case 5: return <Page5Mood value={mood} onChange={setMood} />;
-      case 6: return <Page6Companion value={companion} onChange={setCompanion} />;
+      case 6: return <Page6Companion value={companion} context={companionContext} onChange={setCompanion} onContextChange={setCompanionContext} />;
       case 7: return <Page7Time value={time} onChange={setTime} />;
       case 8: return <Page8Ratings ratings={ratings} onChange={setRatings} />;
       case 9: return <Page9Surprise value={surprise} onChange={setSurprise} />;
