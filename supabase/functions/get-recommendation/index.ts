@@ -46,6 +46,23 @@ serve(async (req) => {
 Use this feedback to heavily weight recommendations toward their preferred genres and away from disliked genres. Prioritize content similar to liked titles.`
       : "";
 
+    const sessionInstruction = (sessionCompanion || sessionMood)
+      ? `\n\nCURRENT SESSION CONTEXT (prioritize this over stored preferences for mood/companion):
+- Right now watching with: ${sessionCompanion || "not specified"}
+- Current mood: ${sessionMood || "not specified"}
+Adjust recommendations based on this session context:
+- If watching with Partner → prioritize romantic, cozy, chemistry-driven content
+- If watching with Friends → prioritize fun, horror, comedy, crowd-pleasers
+- If watching Alone → match the mood more precisely
+- If watching with Family → keep it family-friendly and wholesome
+- If mood is Sad → suggest uplifting or comfort content (avoid heavy depressing films)
+- If mood is Happy/Excited → suggest fun, adventurous, feel-good content
+- If mood is Stressed → suggest light, easy-watch, relaxing content
+- If mood is "Want something light" → avoid heavy/intense content
+- If mood is "Want something intense" → suggest thrillers, dramas, mind-bending content
+- If mood is Romantic → prioritize romance and love stories`
+      : "";
+
     const systemPrompt = `You are a movie and TV show recommendation expert. Based on the user's preferences from their "movie diary", suggest 6 personalized recommendations. Return ONLY valid JSON, no markdown. The JSON must be an array of objects with these fields: title (string), year (string), emoji (single emoji representing the movie/show), genre (string like "Comedy / Drama"), rating (number 1-5 with one decimal), description (one sentence why this matches their mood/preferences), image (a real, working poster image URL — use known TMDB poster paths like "https://image.tmdb.org/t/p/w500/<real_poster_filename>.jpg" where <real_poster_filename> is the actual TMDB poster path for that specific movie/show. Only provide a URL if you are confident it is the correct TMDB poster path for that exact title. If you are not sure of the exact poster path, use an empty string ""), trailerUrl (a YouTube URL to the official trailer - use the format "https://www.youtube.com/watch?v=" followed by the known YouTube video ID for the official trailer, OR if unsure use an empty string). Make recommendations diverse and tailored to their specific inputs.${excludeInstruction}${swipeInstruction}`;
 
     const userPrompt = `Here are my movie diary preferences:
