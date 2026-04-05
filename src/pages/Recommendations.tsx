@@ -32,6 +32,7 @@ const placeholderColors = [
 
 const Recommendations = () => {
   const { user } = useAuth();
+  const { sessionCompanion, sessionMood, resetSession } = useSession();
   const [preferences, setPreferences] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
