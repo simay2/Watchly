@@ -125,6 +125,7 @@ export type Database = {
       user_preferences: {
         Row: {
           companion: string | null
+          companion_context: string | null
           created_at: string
           dislikes: string[] | null
           genres: string[] | null
@@ -140,6 +141,7 @@ export type Database = {
         }
         Insert: {
           companion?: string | null
+          companion_context?: string | null
           created_at?: string
           dislikes?: string[] | null
           genres?: string[] | null
@@ -155,6 +157,7 @@ export type Database = {
         }
         Update: {
           companion?: string | null
+          companion_context?: string | null
           created_at?: string
           dislikes?: string[] | null
           genres?: string[] | null
