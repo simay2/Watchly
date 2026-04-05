@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Play, Loader2, RefreshCw, X, ExternalLink, Heart } from "lucide-react";
+import { Star, Play, Loader2, RefreshCw, X, ExternalLink, Heart, Sparkles } from "lucide-react";
 import PageWrapper from "@/components/lexicon/PageWrapper";
 import SwipeCard from "@/components/lexicon/SwipeCard";
 import SavedList from "@/components/lexicon/SavedList";
@@ -8,6 +8,7 @@ import TasteProfile from "@/components/lexicon/TasteProfile";
 import { useTasteProfile } from "@/hooks/useTasteProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "@/contexts/SessionContext";
 
 interface Recommendation {
   title: string;
