@@ -43,7 +43,7 @@ const Onboarding = () => {
       case 3: return Object.keys(titleReactions).length > 0;
       case 4: return true;
       case 5: return !!mood;
-      case 6: return !!companion;
+      case 6: return !!companion && !!companionContext;
       case 7: return !!time;
       case 8: return Object.keys(ratings).length > 0;
       case 9: return !!surprise;
