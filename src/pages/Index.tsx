@@ -1,10 +1,13 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "@/contexts/SessionContext";
 import { Navigate } from "react-router-dom";
 import Recommendations from "./Recommendations";
+import SessionFlow from "./SessionFlow";
 import { Loader2 } from "lucide-react";
 
 const Index = () => {
   const { profile, loading } = useAuth();
+  const { completed } = useSession();
 
   if (loading) {
     return (
@@ -16,6 +19,10 @@ const Index = () => {
 
   if (profile && !profile.onboarding_completed) {
     return <Navigate to="/onboarding" replace />;
+  }
+
+  if (!completed) {
+    return <SessionFlow />;
   }
 
   return <Recommendations />;

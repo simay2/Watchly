@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Play, Loader2, RefreshCw, X, ExternalLink, Heart } from "lucide-react";
+import { Star, Play, Loader2, RefreshCw, X, ExternalLink, Heart, Sparkles } from "lucide-react";
 import PageWrapper from "@/components/lexicon/PageWrapper";
 import SwipeCard from "@/components/lexicon/SwipeCard";
 import SavedList from "@/components/lexicon/SavedList";
@@ -8,6 +8,7 @@ import TasteProfile from "@/components/lexicon/TasteProfile";
 import { useTasteProfile } from "@/hooks/useTasteProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "@/contexts/SessionContext";
 
 interface Recommendation {
   title: string;
@@ -31,6 +32,7 @@ const placeholderColors = [
 
 const Recommendations = () => {
   const { user } = useAuth();
+  const { sessionCompanion, sessionMood, resetSession } = useSession();
   const [preferences, setPreferences] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +123,7 @@ const Recommendations = () => {
     try {
       const excludeTitles = Array.from(shownTitlesRef.current);
       const { data, error: fnError } = await supabase.functions.invoke("get-recommendation", {
-        body: { ...preferences, excludeTitles, swipeContext },
+        body: { ...preferences, excludeTitles, swipeContext, sessionCompanion, sessionMood },
       });
 
       if (fnError) throw new Error(fnError.message);
@@ -309,9 +311,12 @@ const Recommendations = () => {
           <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={handleSwipeRight} className="p-4 rounded-full bg-primary/10 border-2 border-primary/30 shadow-card text-primary hover:bg-primary/20 transition-colors"><Heart size={22} /></motion.button>
         </div>
 
-        <div className="mt-5 flex justify-center">
+        <div className="mt-5 flex justify-center gap-3">
           <motion.button onClick={fetchRecommendations} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-muted text-foreground rounded-full px-5 py-2.5 font-bold font-body text-sm flex items-center gap-2">
             <RefreshCw size={14} /> New picks
+          </motion.button>
+          <motion.button onClick={resetSession} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-accent/20 text-accent-foreground rounded-full px-5 py-2.5 font-bold font-body text-sm flex items-center gap-2 border border-accent/30">
+            <Sparkles size={14} /> Change vibe
           </motion.button>
         </div>
 
