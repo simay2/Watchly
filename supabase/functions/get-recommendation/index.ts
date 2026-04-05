@@ -55,7 +55,7 @@ Use this feedback to heavily weight recommendations toward their preferred genre
 - Titles I skipped: ${skippedTitles.join(", ") || "none"}
 - Things I dislike: ${(dislikes || []).join(", ") || "nothing specific"}
 - My current mood: ${mood || "not specified"}
-- Watching with: ${companion || "not specified"}
+- Watching with: ${companion || "not specified"}${companionContext ? ` (vibe: ${companionContext})` : ""}
 - Time available: ${time || "not specified"}
 - My ratings: ${ratedTitles || "none"}
 - I want: ${surprise || "popular picks"}
