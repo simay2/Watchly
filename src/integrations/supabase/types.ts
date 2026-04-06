@@ -28,6 +28,8 @@ export type Database = {
           title: string
           trailer_url: string | null
           user_id: string
+          watched: boolean
+          watched_at: string | null
           year: string | null
         }
         Insert: {
@@ -43,6 +45,8 @@ export type Database = {
           title: string
           trailer_url?: string | null
           user_id: string
+          watched?: boolean
+          watched_at?: string | null
           year?: string | null
         }
         Update: {
@@ -58,6 +62,8 @@ export type Database = {
           title?: string
           trailer_url?: string | null
           user_id?: string
+          watched?: boolean
+          watched_at?: string | null
           year?: string | null
         }
         Relationships: []
