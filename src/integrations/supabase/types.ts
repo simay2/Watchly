@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       favorites: {
         Row: {
+          companion_context: string | null
           created_at: string
           description: string | null
           emoji: string | null
@@ -23,12 +24,14 @@ export type Database = {
           id: string
           image: string | null
           rating: number | null
+          session_mood: string | null
           title: string
           trailer_url: string | null
           user_id: string
           year: string | null
         }
         Insert: {
+          companion_context?: string | null
           created_at?: string
           description?: string | null
           emoji?: string | null
@@ -36,12 +39,14 @@ export type Database = {
           id?: string
           image?: string | null
           rating?: number | null
+          session_mood?: string | null
           title: string
           trailer_url?: string | null
           user_id: string
           year?: string | null
         }
         Update: {
+          companion_context?: string | null
           created_at?: string
           description?: string | null
           emoji?: string | null
@@ -49,6 +54,7 @@ export type Database = {
           id?: string
           image?: string | null
           rating?: number | null
+          session_mood?: string | null
           title?: string
           trailer_url?: string | null
           user_id?: string

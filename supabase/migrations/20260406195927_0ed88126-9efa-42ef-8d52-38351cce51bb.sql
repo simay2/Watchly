@@ -1,0 +1,1 @@
+ALTER TABLE public.favorites ADD COLUMN companion_context text, ADD COLUMN session_mood text;
