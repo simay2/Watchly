@@ -1,0 +1,1 @@
+ALTER TABLE public.favorites ADD COLUMN watched boolean NOT NULL DEFAULT false, ADD COLUMN watched_at timestamp with time zone;
