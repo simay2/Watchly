@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Play, Loader2, Trash2, X, ExternalLink } from "lucide-react";
+import { Star, Play, Loader2, Trash2, X, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,8 @@ interface FavoriteItem {
   trailer_url?: string;
   companion_context?: string | null;
   session_mood?: string | null;
+  watched?: boolean;
+  watched_at?: string | null;
 }
 
 const contextEmojis: Record<string, string> = {
@@ -26,7 +28,13 @@ const contextEmojis: Record<string, string> = {
   family: "🏠",
 };
 
-const filters = [
+const statusFilters = [
+  { label: "All", value: "all" },
+  { label: "💾 Saved", value: "saved" },
+  { label: "✅ Watched", value: "watched" },
+];
+
+const companionFilters = [
   { label: "All", value: "all" },
   { label: "🧘 Alone", value: "alone" },
   { label: "💕 Partner", value: "partner" },
@@ -39,7 +47,8 @@ const Favorites = () => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<FavoriteItem | null>(null);
-  const [filter, setFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [companionFilter, setCompanionFilter] = useState("all");
 
   useEffect(() => {
     if (!user) return;
@@ -61,7 +70,37 @@ const Favorites = () => {
     if (selected?.id === id) setSelected(null);
   };
 
-  const filtered = filter === "all" ? favorites : favorites.filter((f) => f.companion_context === filter);
+  const toggleWatched = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const item = favorites.find((f) => f.id === id);
+    if (!item) return;
+    const newWatched = !item.watched;
+    const newWatchedAt = newWatched ? new Date().toISOString() : null;
+
+    await supabase
+      .from("favorites")
+      .update({ watched: newWatched, watched_at: newWatchedAt })
+      .eq("id", id);
+
+    setFavorites((prev) =>
+      prev.map((f) =>
+        f.id === id ? { ...f, watched: newWatched, watched_at: newWatchedAt } : f
+      )
+    );
+    if (selected?.id === id) {
+      setSelected((s) => s ? { ...s, watched: newWatched, watched_at: newWatchedAt } : null);
+    }
+  };
+
+  const filtered = favorites.filter((f) => {
+    const statusMatch =
+      statusFilter === "all" ||
+      (statusFilter === "watched" && f.watched) ||
+      (statusFilter === "saved" && !f.watched);
+    const companionMatch =
+      companionFilter === "all" || f.companion_context === companionFilter;
+    return statusMatch && companionMatch;
+  });
 
   if (loading) {
     return (
@@ -79,15 +118,33 @@ const Favorites = () => {
         {favorites.length} {favorites.length === 1 ? "movie" : "movies"} saved
       </p>
 
-      {/* Filter bar */}
-      <div className="flex gap-2 justify-center flex-wrap mb-6">
-        {filters.map((f) => (
+      {/* Status filter */}
+      <div className="flex gap-2 justify-center flex-wrap mb-2">
+        {statusFilters.map((f) => (
           <motion.button
             key={f.value}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setFilter(f.value)}
+            onClick={() => setStatusFilter(f.value)}
             className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold border-2 transition-all ${
-              filter === f.value
+              statusFilter === f.value
+                ? "border-primary bg-primary/10 text-foreground"
+                : "border-border bg-card text-muted-foreground hover:border-primary/40"
+            }`}
+          >
+            {f.label}
+          </motion.button>
+        ))}
+      </div>
+
+      {/* Companion filter */}
+      <div className="flex gap-2 justify-center flex-wrap mb-6">
+        {companionFilters.map((f) => (
+          <motion.button
+            key={f.value}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setCompanionFilter(f.value)}
+            className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold border-2 transition-all ${
+              companionFilter === f.value
                 ? "border-primary bg-primary/10 text-foreground"
                 : "border-border bg-card text-muted-foreground hover:border-primary/40"
             }`}
@@ -101,10 +158,12 @@ const Favorites = () => {
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3 text-center">
           <span className="text-5xl">💔</span>
           <p className="text-xl font-handwritten text-foreground">
-            {filter === "all" ? "No favorites yet" : "No favorites for this vibe"}
+            {statusFilter === "all" && companionFilter === "all"
+              ? "No favorites yet"
+              : "No favorites for this filter"}
           </p>
           <p className="text-muted-foreground font-body text-sm">
-            {filter === "all"
+            {statusFilter === "all" && companionFilter === "all"
               ? "Swipe right on movies you love to save them here!"
               : "Try a different filter or save more movies!"}
           </p>
@@ -118,15 +177,24 @@ const Favorites = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
               onClick={() => setSelected(fav)}
-              className="flex items-center gap-3 p-3 bg-card rounded-2xl border border-border cursor-pointer hover:shadow-card transition-shadow"
+              className={`flex items-center gap-3 p-3 bg-card rounded-2xl border cursor-pointer hover:shadow-card transition-shadow ${
+                fav.watched ? "border-primary/30 bg-primary/5" : "border-border"
+              }`}
             >
-              {fav.image ? (
-                <img src={fav.image} alt={fav.title} className="w-14 h-20 rounded-xl object-cover shrink-0" />
-              ) : (
-                <div className="w-14 h-20 rounded-xl bg-gradient-to-br from-lavender/40 to-secondary/30 flex items-center justify-center shrink-0">
-                  <span className="text-2xl">{fav.emoji}</span>
-                </div>
-              )}
+              <div className="relative shrink-0">
+                {fav.image ? (
+                  <img src={fav.image} alt={fav.title} className="w-14 h-20 rounded-xl object-cover" />
+                ) : (
+                  <div className="w-14 h-20 rounded-xl bg-gradient-to-br from-lavender/40 to-secondary/30 flex items-center justify-center">
+                    <span className="text-2xl">{fav.emoji}</span>
+                  </div>
+                )}
+                {fav.watched && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                    <Eye size={10} className="text-primary-foreground" />
+                  </div>
+                )}
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold font-body text-foreground text-sm truncate">{fav.title}</p>
                 <p className="text-xs text-muted-foreground font-body">{fav.year} • {fav.genre}</p>
@@ -136,6 +204,11 @@ const Favorites = () => {
                   ))}
                 </div>
                 <div className="flex gap-1 mt-1.5 flex-wrap">
+                  {fav.watched && (
+                    <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4">
+                      ✅ Watched
+                    </Badge>
+                  )}
                   {fav.companion_context && (
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
                       {contextEmojis[fav.companion_context] || ""} {fav.companion_context}
@@ -148,13 +221,27 @@ const Favorites = () => {
                   )}
                 </div>
               </div>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={(e) => { e.stopPropagation(); removeFavorite(fav.id); }}
-                className="p-2 rounded-full text-muted-foreground hover:text-destructive transition-colors shrink-0"
-              >
-                <Trash2 size={14} />
-              </motion.button>
+              <div className="flex flex-col gap-1 shrink-0">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => toggleWatched(fav.id, e)}
+                  className={`p-2 rounded-full transition-colors ${
+                    fav.watched
+                      ? "text-primary hover:text-primary/70"
+                      : "text-muted-foreground hover:text-primary"
+                  }`}
+                  title={fav.watched ? "Mark as unwatched" : "Mark as watched"}
+                >
+                  {fav.watched ? <EyeOff size={14} /> : <Eye size={14} />}
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => { e.stopPropagation(); removeFavorite(fav.id); }}
+                  className="p-2 rounded-full text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <Trash2 size={14} />
+                </motion.button>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -173,18 +260,34 @@ const Favorites = () => {
                   {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={16} className={i < Math.round(selected.rating) ? "fill-sunshine text-sunshine" : "text-muted"} />)}
                 </div>
                 <div className="flex gap-1.5 mb-3 flex-wrap">
+                  {selected.watched && (
+                    <Badge variant="default" className="text-xs">✅ Watched</Badge>
+                  )}
                   {selected.companion_context && (
                     <Badge variant="secondary" className="text-xs">
                       {contextEmojis[selected.companion_context] || ""} {selected.companion_context}
                     </Badge>
                   )}
                   {selected.session_mood && (
-                    <Badge variant="outline" className="text-xs">
-                      {selected.session_mood}
-                    </Badge>
+                    <Badge variant="outline" className="text-xs">{selected.session_mood}</Badge>
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground font-body leading-relaxed mb-4">{selected.description}</p>
+
+                {/* Toggle watched */}
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => toggleWatched(selected.id)}
+                  className={`w-full flex items-center justify-center gap-2 rounded-full py-3 font-bold font-body mb-3 border-2 transition-all ${
+                    selected.watched
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-card text-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {selected.watched ? <><EyeOff size={16} /> Mark as unwatched</> : <><Eye size={16} /> Already watched</>}
+                </motion.button>
+
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => {
                   const url = selected.trailer_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(selected.title + " " + selected.year + " official trailer")}`;
                   window.open(url, "_blank", "noopener,noreferrer");

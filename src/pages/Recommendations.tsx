@@ -102,6 +102,13 @@ const Recommendations = () => {
         history.forEach((h: any) => shownTitlesRef.current.add(h.title.toLowerCase()));
       }
 
+      // Exclude watched favorites from new recommendations
+      if (favs) {
+        favs.filter((f: any) => f.watched).forEach((f: any) => {
+          shownTitlesRef.current.add(f.title.toLowerCase());
+        });
+      }
+
       setPrefsLoading(false);
     };
     load();
