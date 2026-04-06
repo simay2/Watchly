@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Star, Play, Loader2, Trash2, X, ExternalLink } from "lucide-react";
+import { Star, Play, Loader2, Trash2, X, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
 
 interface FavoriteItem {
   id: string;
@@ -14,13 +15,31 @@ interface FavoriteItem {
   emoji: string;
   image?: string;
   trailer_url?: string;
+  companion_context?: string | null;
+  session_mood?: string | null;
 }
+
+const contextEmojis: Record<string, string> = {
+  alone: "🧘",
+  partner: "💕",
+  friends: "🎉",
+  family: "🏠",
+};
+
+const filters = [
+  { label: "All", value: "all" },
+  { label: "🧘 Alone", value: "alone" },
+  { label: "💕 Partner", value: "partner" },
+  { label: "🎉 Friends", value: "friends" },
+  { label: "🏠 Family", value: "family" },
+];
 
 const Favorites = () => {
   const { user } = useAuth();
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<FavoriteItem | null>(null);
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     if (!user) return;
@@ -42,6 +61,8 @@ const Favorites = () => {
     if (selected?.id === id) setSelected(null);
   };
 
+  const filtered = filter === "all" ? favorites : favorites.filter((f) => f.companion_context === filter);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -54,19 +75,43 @@ const Favorites = () => {
   return (
     <div className="px-4 pt-2 pb-24">
       <h2 className="text-3xl font-handwritten text-center mb-1">My Favorites 💖</h2>
-      <p className="text-center text-muted-foreground font-body text-sm mb-6">
+      <p className="text-center text-muted-foreground font-body text-sm mb-4">
         {favorites.length} {favorites.length === 1 ? "movie" : "movies"} saved
       </p>
 
-      {favorites.length === 0 ? (
+      {/* Filter bar */}
+      <div className="flex gap-2 justify-center flex-wrap mb-6">
+        {filters.map((f) => (
+          <motion.button
+            key={f.value}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setFilter(f.value)}
+            className={`px-3 py-1.5 rounded-full text-xs font-body font-semibold border-2 transition-all ${
+              filter === f.value
+                ? "border-primary bg-primary/10 text-foreground"
+                : "border-border bg-card text-muted-foreground hover:border-primary/40"
+            }`}
+          >
+            {f.label}
+          </motion.button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3 text-center">
           <span className="text-5xl">💔</span>
-          <p className="text-xl font-handwritten text-foreground">No favorites yet</p>
-          <p className="text-muted-foreground font-body text-sm">Swipe right on movies you love to save them here!</p>
+          <p className="text-xl font-handwritten text-foreground">
+            {filter === "all" ? "No favorites yet" : "No favorites for this vibe"}
+          </p>
+          <p className="text-muted-foreground font-body text-sm">
+            {filter === "all"
+              ? "Swipe right on movies you love to save them here!"
+              : "Try a different filter or save more movies!"}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
-          {favorites.map((fav, i) => (
+          {filtered.map((fav, i) => (
             <motion.div
               key={fav.id}
               initial={{ opacity: 0, y: 10 }}
@@ -90,6 +135,18 @@ const Favorites = () => {
                     <Star key={si} size={10} className={si < Math.round(fav.rating) ? "fill-sunshine text-sunshine" : "text-muted"} />
                   ))}
                 </div>
+                <div className="flex gap-1 mt-1.5 flex-wrap">
+                  {fav.companion_context && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                      {contextEmojis[fav.companion_context] || ""} {fav.companion_context}
+                    </Badge>
+                  )}
+                  {fav.session_mood && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                      {fav.session_mood}
+                    </Badge>
+                  )}
+                </div>
               </div>
               <motion.button
                 whileTap={{ scale: 0.9 }}
@@ -112,8 +169,20 @@ const Favorites = () => {
               <div className="p-6">
                 <h3 className="text-2xl font-handwritten text-foreground mb-2">{selected.emoji} {selected.title}</h3>
                 <p className="text-sm text-muted-foreground font-body mb-2">{selected.year} • {selected.genre}</p>
-                <div className="flex items-center gap-1.5 mb-3">
+                <div className="flex items-center gap-1.5 mb-2">
                   {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={16} className={i < Math.round(selected.rating) ? "fill-sunshine text-sunshine" : "text-muted"} />)}
+                </div>
+                <div className="flex gap-1.5 mb-3 flex-wrap">
+                  {selected.companion_context && (
+                    <Badge variant="secondary" className="text-xs">
+                      {contextEmojis[selected.companion_context] || ""} {selected.companion_context}
+                    </Badge>
+                  )}
+                  {selected.session_mood && (
+                    <Badge variant="outline" className="text-xs">
+                      {selected.session_mood}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground font-body leading-relaxed mb-4">{selected.description}</p>
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => {

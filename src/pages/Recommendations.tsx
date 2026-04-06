@@ -181,6 +181,8 @@ const Recommendations = () => {
       emoji: rec.emoji,
       image: rec.image,
       trailer_url: rec.trailerUrl,
+      companion_context: sessionCompanion?.toLowerCase() || null,
+      session_mood: sessionMood || null,
     });
   };
 
