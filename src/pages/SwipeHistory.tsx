@@ -12,6 +12,7 @@ interface HistoryItem {
   year: string;
   rating: number;
   emoji: string;
+  image?: string;
   action: string;
   created_at: string;
 }
