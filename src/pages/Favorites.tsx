@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Play, Loader2, Trash2, X, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import MovieImage from "@/components/lexicon/MovieImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 
