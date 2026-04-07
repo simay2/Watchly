@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Play, Loader2, Trash2, X, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import MovieImage from "@/components/lexicon/MovieImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 
@@ -181,14 +182,13 @@ const Favorites = () => {
                 fav.watched ? "border-primary/30 bg-primary/5" : "border-border"
               }`}
             >
-              <div className="relative shrink-0">
-                {fav.image ? (
-                  <img src={fav.image} alt={fav.title} className="w-14 h-20 rounded-xl object-cover" />
-                ) : (
-                  <div className="w-14 h-20 rounded-xl bg-gradient-to-br from-lavender/40 to-secondary/30 flex items-center justify-center">
-                    <span className="text-2xl">{fav.emoji}</span>
-                  </div>
-                )}
+              <div className="relative shrink-0 w-14 h-20 rounded-xl overflow-hidden">
+                <MovieImage
+                  src={fav.image}
+                  alt={fav.title}
+                  emoji={fav.emoji}
+                  className="w-14 h-20 object-cover"
+                />
                 {fav.watched && (
                   <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                     <Eye size={10} className="text-primary-foreground" />

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Play, Loader2, RefreshCw, X, ExternalLink, Heart, Sparkles } from "lucide-react";
 import PageWrapper from "@/components/lexicon/PageWrapper";
+import MovieImage from "@/components/lexicon/MovieImage";
 import SwipeCard from "@/components/lexicon/SwipeCard";
 import SavedList from "@/components/lexicon/SavedList";
 import TasteProfile from "@/components/lexicon/TasteProfile";
@@ -340,11 +341,12 @@ const Recommendations = () => {
             <motion.div initial={{ opacity: 0, scale: 0.9, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 30 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="bg-card rounded-3xl shadow-lg max-w-sm w-full overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
               <motion.button whileTap={{ scale: 0.9 }} onClick={closeModal} className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-background/80 backdrop-blur-sm text-foreground hover:bg-background"><X size={18} /></motion.button>
               <div className="relative w-full h-48 sm:h-56 overflow-hidden">
-                {selectedRec.image ? <img src={selectedRec.image} alt={selectedRec.title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
-                <div className={`${selectedRec.image ? "hidden" : ""} w-full h-full bg-gradient-to-br ${placeholderColors[selectedIndex % placeholderColors.length]} flex flex-col items-center justify-center px-6 text-center gap-2`}>
-                  <span className="text-2xl font-handwritten text-foreground/70 leading-tight">{selectedRec.title}</span>
-                  <span className="text-sm font-body text-muted-foreground">{selectedRec.year}</span>
-                </div>
+                <MovieImage
+                  src={selectedRec.image}
+                  alt={selectedRec.title}
+                  emoji={selectedRec.emoji}
+                  fallbackGradient={placeholderColors[selectedIndex % placeholderColors.length]}
+                />
                 <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-card to-transparent" />
               </div>
               <div className="p-5 pt-2 -mt-4 relative z-10">

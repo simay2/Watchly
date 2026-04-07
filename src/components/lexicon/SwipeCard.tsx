@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { Star, Heart, X } from "lucide-react";
+import MovieImage from "@/components/lexicon/MovieImage";
 
 interface Recommendation {
   title: string;
@@ -43,7 +44,6 @@ const SwipeCard = ({
   onClick,
   isTop,
 }: SwipeCardProps) => {
-  const [imgError, setImgError] = useState(false);
   const [exiting, setExiting] = useState<"left" | "right" | null>(null);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-12, 12]);
@@ -120,22 +120,12 @@ const SwipeCard = ({
 
           {/* Poster */}
           <div className="relative w-full h-52 sm:h-64 overflow-hidden shrink-0">
-            {rec.image && !imgError ? (
-              <img
-                src={rec.image}
-                alt={rec.title}
-                className="w-full h-full object-cover"
-                onError={() => setImgError(true)}
-                draggable={false}
-              />
-            ) : (
-              <div
-                className={`w-full h-full bg-gradient-to-br ${placeholderGradients[index % placeholderGradients.length]} flex flex-col items-center justify-center px-6 text-center gap-1`}
-              >
-                <span className="text-4xl">{rec.emoji}</span>
-                <span className="text-lg font-handwritten text-foreground/70">{rec.title}</span>
-              </div>
-            )}
+            <MovieImage
+              src={rec.image}
+              alt={rec.title}
+              emoji={rec.emoji}
+              fallbackGradient={placeholderGradients[index % placeholderGradients.length]}
+            />
             <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent" />
           </div>
 
