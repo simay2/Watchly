@@ -63,7 +63,7 @@ Adjust recommendations based on this session context:
 - If mood is Romantic → prioritize romance and love stories`
       : "";
 
-    const systemPrompt = `You are a movie and TV show recommendation expert. Based on the user's preferences from their "movie diary", suggest 6 personalized recommendations. Return ONLY valid JSON, no markdown. The JSON must be an array of objects with these fields: title (string), year (string), emoji (single emoji representing the movie/show), genre (string like "Comedy / Drama"), rating (number 1-5 with one decimal), description (one sentence why this matches their mood/preferences), image (a real, working poster image URL — use known TMDB poster paths like "https://image.tmdb.org/t/p/w500/<real_poster_filename>.jpg" where <real_poster_filename> is the actual TMDB poster path for that specific movie/show. Only provide a URL if you are confident it is the correct TMDB poster path for that exact title. If you are not sure of the exact poster path, use an empty string ""), trailerUrl (a YouTube URL to the official trailer - use the format "https://www.youtube.com/watch?v=" followed by the known YouTube video ID for the official trailer, OR if unsure use an empty string). Make recommendations diverse and tailored to their specific inputs.${excludeInstruction}${swipeInstruction}${sessionInstruction}`;
+    const systemPrompt = `You are a movie and TV show recommendation expert. Based on the user's preferences from their "movie diary", suggest 6 personalized recommendations. Return ONLY valid JSON, no markdown. The JSON must be an array of objects with these fields: title (string - use the exact official title), year (string), emoji (single emoji representing the movie/show), genre (string like "Comedy / Drama"), rating (number 1-5 with one decimal), description (one sentence why this matches their mood/preferences), image (leave as empty string "" - posters will be looked up separately), trailerUrl (a YouTube URL to the official trailer - use the format "https://www.youtube.com/watch?v=" followed by the known YouTube video ID for the official trailer, OR if unsure use an empty string). Make recommendations diverse and tailored to their specific inputs.${excludeInstruction}${swipeInstruction}${sessionInstruction}`;
 
     const userPrompt = `Here are my movie diary preferences:
 - I watch: ${viewerType || "movies and TV shows"}
@@ -126,6 +126,33 @@ Please recommend 6 ${viewerType === "TV series only" ? "TV shows" : viewerType =
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
       throw new Error("Failed to parse recommendations");
+    }
+
+    // Enrich recommendations with real TMDB poster paths
+    const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
+    if (TMDB_API_KEY) {
+      const enriched = await Promise.all(
+        recommendations.map(async (rec: any) => {
+          try {
+            const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}&year=${rec.year}`;
+            const tmdbRes = await fetch(searchUrl);
+            if (tmdbRes.ok) {
+              const tmdbData = await tmdbRes.json();
+              const result = tmdbData.results?.[0];
+              if (result?.poster_path) {
+                rec.image = `https://image.tmdb.org/t/p/w500${result.poster_path}`;
+              } else {
+                rec.image = "";
+              }
+            }
+          } catch (e) {
+            console.error(`TMDB lookup failed for ${rec.title}:`, e);
+            rec.image = "";
+          }
+          return rec;
+        })
+      );
+      recommendations = enriched;
     }
 
     return new Response(JSON.stringify({ recommendations }), {
