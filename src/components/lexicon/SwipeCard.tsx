@@ -44,7 +44,6 @@ const SwipeCard = ({
   onClick,
   isTop,
 }: SwipeCardProps) => {
-  const [imgError, setImgError] = useState(false);
   const [exiting, setExiting] = useState<"left" | "right" | null>(null);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-12, 12]);
