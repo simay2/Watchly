@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Play, Loader2, RefreshCw, X, ExternalLink, Heart, Sparkles } from "lucide-react";
 import PageWrapper from "@/components/lexicon/PageWrapper";
+import MovieImage from "@/components/lexicon/MovieImage";
 import SwipeCard from "@/components/lexicon/SwipeCard";
 import SavedList from "@/components/lexicon/SavedList";
 import TasteProfile from "@/components/lexicon/TasteProfile";
