@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { Star, Heart, X } from "lucide-react";
+import MovieImage from "@/components/lexicon/MovieImage";
 
 interface Recommendation {
   title: string;
