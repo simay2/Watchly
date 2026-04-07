@@ -128,6 +128,33 @@ Please recommend 6 ${viewerType === "TV series only" ? "TV shows" : viewerType =
       throw new Error("Failed to parse recommendations");
     }
 
+    // Enrich recommendations with real TMDB poster paths
+    const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
+    if (TMDB_API_KEY) {
+      const enriched = await Promise.all(
+        recommendations.map(async (rec: any) => {
+          try {
+            const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}&year=${rec.year}`;
+            const tmdbRes = await fetch(searchUrl);
+            if (tmdbRes.ok) {
+              const tmdbData = await tmdbRes.json();
+              const result = tmdbData.results?.[0];
+              if (result?.poster_path) {
+                rec.image = `https://image.tmdb.org/t/p/w500${result.poster_path}`;
+              } else {
+                rec.image = "";
+              }
+            }
+          } catch (e) {
+            console.error(`TMDB lookup failed for ${rec.title}:`, e);
+            rec.image = "";
+          }
+          return rec;
+        })
+      );
+      recommendations = enriched;
+    }
+
     return new Response(JSON.stringify({ recommendations }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
