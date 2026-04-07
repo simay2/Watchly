@@ -84,8 +84,16 @@ const SwipeHistory = () => {
               transition={{ delay: i * 0.03 }}
               className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border"
             >
-              <div className={`p-2 rounded-full shrink-0 ${item.action === "liked" ? "bg-accent/20 text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
-                {item.action === "liked" ? <Heart size={14} className="fill-current" /> : <X size={14} />}
+              <div className="w-10 h-14 rounded-lg overflow-hidden shrink-0 border border-border">
+                <MovieImage
+                  src={item.image}
+                  alt={item.title}
+                  emoji={item.emoji}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className={`p-1.5 rounded-full shrink-0 ${item.action === "liked" ? "bg-accent/20 text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+                {item.action === "liked" ? <Heart size={12} className="fill-current" /> : <X size={12} />}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold font-body text-foreground text-sm truncate">{item.emoji} {item.title}</p>
