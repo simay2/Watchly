@@ -3,6 +3,7 @@ import { Loader2, Heart, X, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import MovieImage from "@/components/lexicon/MovieImage";
 
 interface HistoryItem {
   id: string;
