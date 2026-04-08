@@ -139,7 +139,7 @@ const Recommendations = () => {
     try {
       const excludeTitles = Array.from(shownTitlesRef.current);
       const { data, error: fnError } = await supabase.functions.invoke("get-recommendation", {
-        body: { ...preferences, excludeTitles, swipeContext, sessionCompanion, sessionMood },
+        body: { ...preferences, excludeTitles, swipeContext, sessionCompanion, sessionMood, watchedRatings: watchedRatingsRef.current },
       });
 
       if (fnError) throw new Error(fnError.message);
