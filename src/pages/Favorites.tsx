@@ -230,6 +230,11 @@ const Favorites = () => {
                       ✅ Watched
                     </Badge>
                   )}
+                  {fav.user_rating && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 gap-0.5">
+                      {"⭐".repeat(fav.user_rating)} {fav.user_rating}/5
+                    </Badge>
+                  )}
                   {fav.companion_context && (
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
                       {contextEmojis[fav.companion_context] || ""} {fav.companion_context}
@@ -241,6 +246,16 @@ const Favorites = () => {
                     </Badge>
                   )}
                 </div>
+                {fav.watched && (
+                  <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
+                    <UserRating
+                      rating={fav.user_rating ?? null}
+                      onRate={(r) => rateFavorite(fav.id, r)}
+                      size={12}
+                      compact
+                    />
+                  </div>
+                )}
               </div>
               <div className="flex flex-col gap-1 shrink-0">
                 <motion.button
