@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import MovieImage from "@/components/lexicon/MovieImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import UserRating from "@/components/lexicon/UserRating";
 
 interface FavoriteItem {
   id: string;
@@ -20,6 +21,8 @@ interface FavoriteItem {
   session_mood?: string | null;
   watched?: boolean;
   watched_at?: string | null;
+  user_rating?: number | null;
+  rated_at?: string | null;
 }
 
 const contextEmojis: Record<string, string> = {
