@@ -45,6 +45,7 @@ const Recommendations = () => {
   const [saved, setSaved] = useState<Recommendation[]>([]);
   const [swipeFeedback, setSwipeFeedback] = useState<"like" | "skip" | null>(null);
   const shownTitlesRef = useRef<Set<string>>(new Set());
+  const watchedRatingsRef = useRef<Record<string, { rating: number; genre: string }>>({});
   const { profile, swipeContext, recordLike, recordDislike } = useTasteProfile();
 
   // Load user preferences and existing favorites/history
