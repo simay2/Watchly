@@ -308,7 +308,20 @@ const Favorites = () => {
                     <Badge variant="outline" className="text-xs">{selected.session_mood}</Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground font-body leading-relaxed mb-4">{selected.description}</p>
+                <p className="text-sm text-muted-foreground font-body leading-relaxed mb-3">{selected.description}</p>
+
+                {/* Your Rating */}
+                <div className="mb-4 p-3 rounded-2xl bg-muted/50 border border-border">
+                  <p className="text-xs font-body font-semibold text-foreground mb-1.5">
+                    {selected.watched ? "Your rating ✨" : "Rate after watching 🔒"}
+                  </p>
+                  <UserRating
+                    rating={selected.user_rating ?? null}
+                    onRate={(r) => rateFavorite(selected.id, r)}
+                    disabled={!selected.watched}
+                    size={24}
+                  />
+                </div>
 
                 {/* Toggle watched */}
                 <motion.button
