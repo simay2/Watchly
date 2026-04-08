@@ -96,6 +96,24 @@ const Favorites = () => {
     }
   };
 
+  const rateFavorite = async (id: string, userRating: number, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const now = new Date().toISOString();
+    await supabase
+      .from("favorites")
+      .update({ user_rating: userRating, rated_at: now })
+      .eq("id", id);
+
+    setFavorites((prev) =>
+      prev.map((f) =>
+        f.id === id ? { ...f, user_rating: userRating, rated_at: now } : f
+      )
+    );
+    if (selected?.id === id) {
+      setSelected((s) => s ? { ...s, user_rating: userRating, rated_at: now } : null);
+    }
+  };
+
   const filtered = favorites.filter((f) => {
     const statusMatch =
       statusFilter === "all" ||
