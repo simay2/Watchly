@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { viewerType, genres, mood, companion, companionContext, time, surprise, dislikes, titleReactions, ratings, excludeTitles, swipeContext, sessionCompanion, sessionMood } = await req.json();
+    const { viewerType, genres, mood, companion, companionContext, time, surprise, dislikes, titleReactions, ratings, excludeTitles, swipeContext, sessionCompanion, sessionMood, watchedRatings } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
