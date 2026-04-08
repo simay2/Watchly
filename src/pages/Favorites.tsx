@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import MovieImage from "@/components/lexicon/MovieImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import UserRating from "@/components/lexicon/UserRating";
 
 interface FavoriteItem {
   id: string;
@@ -20,6 +21,8 @@ interface FavoriteItem {
   session_mood?: string | null;
   watched?: boolean;
   watched_at?: string | null;
+  user_rating?: number | null;
+  rated_at?: string | null;
 }
 
 const contextEmojis: Record<string, string> = {
@@ -90,6 +93,24 @@ const Favorites = () => {
     );
     if (selected?.id === id) {
       setSelected((s) => s ? { ...s, watched: newWatched, watched_at: newWatchedAt } : null);
+    }
+  };
+
+  const rateFavorite = async (id: string, userRating: number, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const now = new Date().toISOString();
+    await supabase
+      .from("favorites")
+      .update({ user_rating: userRating, rated_at: now })
+      .eq("id", id);
+
+    setFavorites((prev) =>
+      prev.map((f) =>
+        f.id === id ? { ...f, user_rating: userRating, rated_at: now } : f
+      )
+    );
+    if (selected?.id === id) {
+      setSelected((s) => s ? { ...s, user_rating: userRating, rated_at: now } : null);
     }
   };
 
@@ -209,6 +230,11 @@ const Favorites = () => {
                       ✅ Watched
                     </Badge>
                   )}
+                  {fav.user_rating && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 gap-0.5">
+                      {"⭐".repeat(fav.user_rating)} {fav.user_rating}/5
+                    </Badge>
+                  )}
                   {fav.companion_context && (
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
                       {contextEmojis[fav.companion_context] || ""} {fav.companion_context}
@@ -220,6 +246,16 @@ const Favorites = () => {
                     </Badge>
                   )}
                 </div>
+                {fav.watched && (
+                  <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
+                    <UserRating
+                      rating={fav.user_rating ?? null}
+                      onRate={(r) => rateFavorite(fav.id, r)}
+                      size={12}
+                      compact
+                    />
+                  </div>
+                )}
               </div>
               <div className="flex flex-col gap-1 shrink-0">
                 <motion.button
@@ -272,7 +308,20 @@ const Favorites = () => {
                     <Badge variant="outline" className="text-xs">{selected.session_mood}</Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground font-body leading-relaxed mb-4">{selected.description}</p>
+                <p className="text-sm text-muted-foreground font-body leading-relaxed mb-3">{selected.description}</p>
+
+                {/* Your Rating */}
+                <div className="mb-4 p-3 rounded-2xl bg-muted/50 border border-border">
+                  <p className="text-xs font-body font-semibold text-foreground mb-1.5">
+                    {selected.watched ? "Your rating ✨" : "Rate after watching 🔒"}
+                  </p>
+                  <UserRating
+                    rating={selected.user_rating ?? null}
+                    onRate={(r) => rateFavorite(selected.id, r)}
+                    disabled={!selected.watched}
+                    size={24}
+                  />
+                </div>
 
                 {/* Toggle watched */}
                 <motion.button

@@ -23,11 +23,13 @@ export type Database = {
           genre: string | null
           id: string
           image: string | null
+          rated_at: string | null
           rating: number | null
           session_mood: string | null
           title: string
           trailer_url: string | null
           user_id: string
+          user_rating: number | null
           watched: boolean
           watched_at: string | null
           year: string | null
@@ -40,11 +42,13 @@ export type Database = {
           genre?: string | null
           id?: string
           image?: string | null
+          rated_at?: string | null
           rating?: number | null
           session_mood?: string | null
           title: string
           trailer_url?: string | null
           user_id: string
+          user_rating?: number | null
           watched?: boolean
           watched_at?: string | null
           year?: string | null
@@ -57,11 +61,13 @@ export type Database = {
           genre?: string | null
           id?: string
           image?: string | null
+          rated_at?: string | null
           rating?: number | null
           session_mood?: string | null
           title?: string
           trailer_url?: string | null
           user_id?: string
+          user_rating?: number | null
           watched?: boolean
           watched_at?: string | null
           year?: string | null

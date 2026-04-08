@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { viewerType, genres, mood, companion, companionContext, time, surprise, dislikes, titleReactions, ratings, excludeTitles, swipeContext, sessionCompanion, sessionMood } = await req.json();
+    const { viewerType, genres, mood, companion, companionContext, time, surprise, dislikes, titleReactions, ratings, excludeTitles, swipeContext, sessionCompanion, sessionMood, watchedRatings } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -63,7 +63,23 @@ Adjust recommendations based on this session context:
 - If mood is Romantic → prioritize romance and love stories`
       : "";
 
-    const systemPrompt = `You are a movie and TV show recommendation expert. Based on the user's preferences from their "movie diary", suggest 6 personalized recommendations. Return ONLY valid JSON, no markdown. The JSON must be an array of objects with these fields: title (string - use the exact official title), year (string), emoji (single emoji representing the movie/show), genre (string like "Comedy / Drama"), rating (number 1-5 with one decimal), description (one sentence why this matches their mood/preferences), image (leave as empty string "" - posters will be looked up separately), trailerUrl (a YouTube URL to the official trailer - use the format "https://www.youtube.com/watch?v=" followed by the known YouTube video ID for the official trailer, OR if unsure use an empty string). Make recommendations diverse and tailored to their specific inputs.${excludeInstruction}${swipeInstruction}${sessionInstruction}`;
+    // Watched ratings signal
+    const watchedRatingsEntries = Object.entries(watchedRatings || {});
+    const watchedRatingsInstruction = watchedRatingsEntries.length > 0
+      ? `\n\nWATCHED ITEM RATINGS (strongest signal — prioritize these over simple likes/skips):
+${watchedRatingsEntries.map(([title, info]: [string, any]) => {
+  const signal = info.rating >= 5 ? "LOVED" : info.rating >= 4 ? "enjoyed" : info.rating === 3 ? "neutral" : info.rating === 2 ? "disliked" : "hated";
+  return `- "${title}" (${info.genre}): ${info.rating}/5 stars (${signal})`;
+}).join("\n")}
+Use these ratings as the STRONGEST signal for recommendations:
+- 5★ titles: find MORE like these (same genre, director style, tone)
+- 4★ titles: lean toward similar content
+- 3★ titles: neutral, don't specifically seek or avoid
+- 2★ titles: avoid similar content
+- 1★ titles: strongly avoid this genre/style unless other signals override`
+      : "";
+
+    const systemPrompt = `You are a movie and TV show recommendation expert. Based on the user's preferences from their "movie diary", suggest 6 personalized recommendations. Return ONLY valid JSON, no markdown. The JSON must be an array of objects with these fields: title (string - use the exact official title), year (string), emoji (single emoji representing the movie/show), genre (string like "Comedy / Drama"), rating (number 1-5 with one decimal), description (one sentence why this matches their mood/preferences), image (leave as empty string "" - posters will be looked up separately), trailerUrl (a YouTube URL to the official trailer - use the format "https://www.youtube.com/watch?v=" followed by the known YouTube video ID for the official trailer, OR if unsure use an empty string). Make recommendations diverse and tailored to their specific inputs.${excludeInstruction}${swipeInstruction}${sessionInstruction}${watchedRatingsInstruction}`;
 
     const userPrompt = `Here are my movie diary preferences:
 - I watch: ${viewerType || "movies and TV shows"}

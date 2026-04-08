@@ -45,6 +45,7 @@ const Recommendations = () => {
   const [saved, setSaved] = useState<Recommendation[]>([]);
   const [swipeFeedback, setSwipeFeedback] = useState<"like" | "skip" | null>(null);
   const shownTitlesRef = useRef<Set<string>>(new Set());
+  const watchedRatingsRef = useRef<Record<string, { rating: number; genre: string }>>({});
   const { profile, swipeContext, recordLike, recordDislike } = useTasteProfile();
 
   // Load user preferences and existing favorites/history
@@ -91,6 +92,13 @@ const Recommendations = () => {
           image: f.image,
           trailerUrl: f.trailer_url,
         })));
+
+        // Build watched ratings for recommendation signal
+        const watchedRatings: Record<string, { rating: number; genre: string }> = {};
+        favs.filter((f: any) => f.watched && f.user_rating).forEach((f: any) => {
+          watchedRatings[f.title] = { rating: f.user_rating, genre: f.genre || "" };
+        });
+        watchedRatingsRef.current = watchedRatings;
       }
 
       // Load swipe history to exclude already seen
@@ -131,7 +139,7 @@ const Recommendations = () => {
     try {
       const excludeTitles = Array.from(shownTitlesRef.current);
       const { data, error: fnError } = await supabase.functions.invoke("get-recommendation", {
-        body: { ...preferences, excludeTitles, swipeContext, sessionCompanion, sessionMood },
+        body: { ...preferences, excludeTitles, swipeContext, sessionCompanion, sessionMood, watchedRatings: watchedRatingsRef.current },
       });
 
       if (fnError) throw new Error(fnError.message);
