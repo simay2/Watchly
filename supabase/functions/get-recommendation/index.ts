@@ -1,4 +1,27 @@
+// ============================================================================
+// HYBRID AI-ASSISTED RECOMMENDATION — Edge Function Entry Point
+// ----------------------------------------------------------------------------
+// Pipeline:
+//   1. Build a candidate pool from TMDB (trending + discover-by-genre)
+//   2. Score every candidate with a custom content-based scoring model
+//      (see scoring.ts). Factors: preferred / disliked genres, liked /
+//      disliked titles, favorites, watched-item ratings, vote average,
+//      popularity, and session context (mood / companion / time).
+//   3. Keep only the top-N candidates (default 15).
+//   4. Send ONLY those top candidates to Gemini, which selects the best 6
+//      and writes a short personalized explanation for each.
+//   5. Return refined recommendations to the frontend.
+//
+// Gemini never sees the full TMDB database — only the pre-scored shortlist.
+// This is a simple rule-enhanced content-based model, NOT a trained ML model.
+// ============================================================================
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  fetchTmdbCandidatePool,
+  getTopRecommendationCandidates,
+  TmdbCandidate,
+} from "./scoring.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,88 +35,127 @@ serve(async (req) => {
   }
 
   try {
-    const { viewerType, genres, mood, companion, companionContext, time, surprise, dislikes, titleReactions, ratings, excludeTitles, swipeContext, sessionCompanion, sessionMood, watchedRatings } = await req.json();
+    const {
+      viewerType, genres, mood, companion, companionContext, time, surprise,
+      dislikes, titleReactions, ratings, excludeTitles, swipeContext,
+      sessionCompanion, sessionMood, watchedRatings,
+    } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!TMDB_API_KEY) throw new Error("TMDB_API_KEY is not configured");
 
+    // -- Derive interaction signals from incoming payload --
     const likedTitles = Object.entries(titleReactions || {})
-      .filter(([_, reaction]) => reaction === "love" || reaction === "favorite" || reaction === "heart" || reaction === "star")
-      .map(([title]) => title);
-
+      .filter(([_, r]) => ["love", "favorite", "heart", "star"].includes(r as string))
+      .map(([t]) => t);
     const skippedTitles = Object.entries(titleReactions || {})
-      .filter(([_, reaction]) => reaction === "skip")
-      .map(([title]) => title);
+      .filter(([_, r]) => r === "skip")
+      .map(([t]) => t);
 
-    const ratedTitles = Object.entries(ratings || {})
-      .map(([title, rating]) => `${title}: ${rating}/5`)
-      .join(", ");
+    const userPreferences = {
+      genres: genres || [],
+      dislikes: dislikes || [],
+      viewerType,
+      mood,
+      companion,
+      time,
+    };
+
+    const userInteractions = {
+      likedTitles: [...(swipeContext?.likedTitles || []), ...likedTitles],
+      dislikedTitles: [...(swipeContext?.dislikedTitles || []), ...skippedTitles],
+      preferredGenres: swipeContext?.preferredGenres || [],
+      avoidGenres: swipeContext?.avoidGenres || [],
+      favoriteGenres: Object.values(watchedRatings || {})
+        .filter((w: any) => w.rating >= 4)
+        .flatMap((w: any) =>
+          (w.genre || "").split(/[\/,&·•]/).map((s: string) => s.trim()).filter(Boolean)
+        ),
+      watchedRatings: watchedRatings || {},
+    };
+
+    const userContext = {
+      sessionMood: sessionMood || null,
+      sessionCompanion: sessionCompanion || null,
+      time: time || null,
+    };
 
     const excludeList: string[] = excludeTitles || [];
-    const excludeInstruction = excludeList.length > 0
-      ? `\n\nIMPORTANT: Do NOT recommend any of these titles (already shown): ${excludeList.join(", ")}`
-      : "";
 
-    const swipeInstruction = swipeContext
-      ? `\n\nSWIPE FEEDBACK FROM USER:
-- Liked titles: ${(swipeContext.likedTitles || []).join(", ") || "none yet"}
-- Disliked titles: ${(swipeContext.dislikedTitles || []).join(", ") || "none yet"}
-- Preferred genres: ${(swipeContext.preferredGenres || []).join(", ") || "not enough data"}
-- Genres to avoid: ${(swipeContext.avoidGenres || []).join(", ") || "none"}
-- Average preferred rating: ${swipeContext.avgPreferredRating || "N/A"}
-Use this feedback to heavily weight recommendations toward their preferred genres and away from disliked genres. Prioritize content similar to liked titles.`
-      : "";
+    // === STEP 1+2: Build TMDB candidate pool ==============================
+    const pool = await fetchTmdbCandidatePool(
+      TMDB_API_KEY,
+      genres || [],
+      viewerType,
+      excludeList
+    );
+    console.log(`[hybrid] TMDB pool size: ${pool.length}`);
 
-    const sessionInstruction = (sessionCompanion || sessionMood)
-      ? `\n\nCURRENT SESSION CONTEXT (prioritize this over stored preferences for mood/companion):
-- Right now watching with: ${sessionCompanion || "not specified"}
-- Current mood: ${sessionMood || "not specified"}
-Adjust recommendations based on this session context:
-- If watching with Partner → prioritize romantic, cozy, chemistry-driven content
-- If watching with Friends → prioritize fun, horror, comedy, crowd-pleasers
-- If watching Alone → match the mood more precisely
-- If watching with Family → keep it family-friendly and wholesome
-- If mood is Sad → suggest uplifting or comfort content (avoid heavy depressing films)
-- If mood is Happy/Excited → suggest fun, adventurous, feel-good content
-- If mood is Stressed → suggest light, easy-watch, relaxing content
-- If mood is "Want something light" → avoid heavy/intense content
-- If mood is "Want something intense" → suggest thrillers, dramas, mind-bending content
-- If mood is Romantic → prioritize romance and love stories`
-      : "";
+    // === STEP 3: Score and pick top candidates ============================
+    const topCandidates = getTopRecommendationCandidates(
+      pool, userPreferences, userInteractions, 15, userContext
+    );
+    console.log(`[hybrid] Top candidates: ${topCandidates.length}`);
 
-    // Watched ratings signal
-    const watchedRatingsEntries = Object.entries(watchedRatings || {});
-    const watchedRatingsInstruction = watchedRatingsEntries.length > 0
-      ? `\n\nWATCHED ITEM RATINGS (strongest signal — prioritize these over simple likes/skips):
-${watchedRatingsEntries.map(([title, info]: [string, any]) => {
-  const signal = info.rating >= 5 ? "LOVED" : info.rating >= 4 ? "enjoyed" : info.rating === 3 ? "neutral" : info.rating === 2 ? "disliked" : "hated";
-  return `- "${title}" (${info.genre}): ${info.rating}/5 stars (${signal})`;
-}).join("\n")}
-Use these ratings as the STRONGEST signal for recommendations:
-- 5★ titles: find MORE like these (same genre, director style, tone)
-- 4★ titles: lean toward similar content
-- 3★ titles: neutral, don't specifically seek or avoid
-- 2★ titles: avoid similar content
-- 1★ titles: strongly avoid this genre/style unless other signals override`
-      : "";
+    // If TMDB returned nothing (network/keys), fall back to letting Gemini
+    // propose freely so the user is never blocked.
+    const useCandidates = topCandidates.length > 0;
 
-    const systemPrompt = `You are a movie and TV show recommendation expert. Based on the user's preferences from their "movie diary", suggest 6 personalized recommendations. Return ONLY valid JSON, no markdown. The JSON must be an array of objects with these fields: title (string - use the exact official title), year (string), emoji (single emoji representing the movie/show), genre (string like "Comedy / Drama"), rating (number 1-5 with one decimal), description (one sentence why this matches their mood/preferences), image (leave as empty string "" - posters will be looked up separately), trailerUrl (a YouTube URL to the official trailer - use the format "https://www.youtube.com/watch?v=" followed by the known YouTube video ID for the official trailer, OR if unsure use an empty string). Make recommendations diverse and tailored to their specific inputs.${excludeInstruction}${swipeInstruction}${sessionInstruction}${watchedRatingsInstruction}`;
+    // === STEP 4: Ask Gemini to refine + explain ===========================
+    const candidateBlock = useCandidates
+      ? topCandidates.map((c, i) =>
+          `${i + 1}. [${c.media_type === "tv" ? "TV" : "Movie"}] "${c.title}" (${c.year}) — ` +
+          `genres: ${c.genres.join(", ") || "n/a"} | rating: ${c.vote_average.toFixed(1)} | ` +
+          `score: ${c.score} | tmdb_id: ${c.id}\n   Overview: ${c.overview.slice(0, 220)}`
+        ).join("\n")
+      : "(no pre-scored candidates — propose 6 fresh picks yourself)";
 
-    const userPrompt = `Here are my movie diary preferences:
-- I watch: ${viewerType || "movies and TV shows"}
-- Favorite genres: ${(genres || []).join(", ") || "not specified"}
-- Titles I liked: ${likedTitles.join(", ") || "none specified"}
-- Titles I skipped: ${skippedTitles.join(", ") || "none"}
-- Things I dislike: ${(dislikes || []).join(", ") || "nothing specific"}
-- My current mood: ${mood || "not specified"}
-- Watching with: ${companion || "not specified"}${companionContext ? ` (vibe: ${companionContext})` : ""}
-- Time available: ${time || "not specified"}
-- My ratings: ${ratedTitles || "none"}
-- I want: ${surprise || "popular picks"}
+    const systemPrompt = `You are a movie/TV recommendation expert.
 
-Please recommend 6 ${viewerType === "TV series only" ? "TV shows" : viewerType === "Movies only" ? "movies" : "movies and TV shows"} that match my preferences.`;
+IMPORTANT: The CANDIDATE list below was ALREADY pre-selected by a custom content-based scoring model that ranks titles by the user's preferred/disliked genres, liked/favorite content, ratings, popularity, and session context. Your job is to:
+  (a) pick the best 6 from the candidate list (do not invent new titles unless the candidate list is empty),
+  (b) write a SHORT personalized explanation (one sentence) for each, referencing the user's actual preferences/mood/companion when relevant,
+  (c) order them best-match-first.
+
+Return ONLY valid JSON, no markdown. The JSON must be an array of 6 objects with these fields:
+- title (string, exact from candidate)
+- type ("movie" or "tv")
+- year (string)
+- emoji (one emoji)
+- genre (string like "Comedy / Drama")
+- rating (number 1-5, one decimal — convert from TMDB 0-10 by dividing by 2)
+- description (one-sentence personalized explanation)
+- image (empty string "" — posters attached later)
+- trailerUrl (empty string "")
+- tmdbId (number — the tmdb_id from the candidate)
+- score (number — the score from the candidate)
+${excludeList.length ? `\nDo NOT include any of these already-seen titles: ${excludeList.slice(0, 40).join(", ")}` : ""}`;
+
+    const userPrompt = `USER PREFERENCES
+- Watches: ${viewerType || "movies and TV"}
+- Favorite genres: ${(genres || []).join(", ") || "n/a"}
+- Dislikes: ${(dislikes || []).join(", ") || "n/a"}
+- Onboarding mood: ${mood || "n/a"}
+- Onboarding companion: ${companion || "n/a"}${companionContext ? ` (${companionContext})` : ""}
+- Time available: ${time || "n/a"}
+- Surprise level: ${surprise || "n/a"}
+- Titles liked: ${likedTitles.join(", ") || "none"}
+- Titles skipped: ${skippedTitles.join(", ") || "none"}
+
+CURRENT SESSION
+- Watching with: ${sessionCompanion || "n/a"}
+- Current mood: ${sessionMood || "n/a"}
+
+WATCHED RATINGS (strongest signal)
+${Object.entries(watchedRatings || {}).map(([t, i]: [string, any]) =>
+  `- "${t}" (${i.genre}): ${i.rating}/5`).join("\n") || "none"}
+
+PRE-SCORED CANDIDATES (from content-based model, best first):
+${candidateBlock}
+
+Pick the best 6 and write personalized one-sentence explanations.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -113,63 +175,65 @@ Please recommend 6 ${viewerType === "TV series only" ? "TV shows" : viewerType =
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("AI gateway error:", response.status, await response.text());
       throw new Error("AI gateway error");
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const content = data.choices?.[0]?.message?.content || "";
 
-    let recommendations;
+    let recommendations: any[];
     try {
       const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        recommendations = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error("No JSON array found in response");
-      }
-    } catch (parseError) {
+      if (!jsonMatch) throw new Error("No JSON array found");
+      recommendations = JSON.parse(jsonMatch[0]);
+    } catch (e) {
       console.error("Failed to parse AI response:", content);
       throw new Error("Failed to parse recommendations");
     }
 
-    // Enrich recommendations with real TMDB poster paths
-    const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
-    if (TMDB_API_KEY) {
-      const enriched = await Promise.all(
-        recommendations.map(async (rec: any) => {
+    // === STEP 5: Enrich posters from the candidate pool (or TMDB lookup) ==
+    const candidateById = new Map<number, TmdbCandidate & { score: number }>();
+    topCandidates.forEach((c) => candidateById.set(c.id, c));
+
+    recommendations = await Promise.all(
+      recommendations.map(async (rec: any) => {
+        // Prefer poster from the pre-scored candidate (no extra API call)
+        const cand = rec.tmdbId ? candidateById.get(rec.tmdbId) : undefined;
+        if (cand?.poster_path) {
+          rec.image = `https://image.tmdb.org/t/p/w500${cand.poster_path}`;
+          rec.type = cand.media_type;
+          rec.genres = cand.genres;
+        } else {
+          // Fallback: search TMDB by title
           try {
-            const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}&year=${rec.year}`;
-            const tmdbRes = await fetch(searchUrl);
-            if (tmdbRes.ok) {
-              const tmdbData = await tmdbRes.json();
-              const result = tmdbData.results?.[0];
-              if (result?.poster_path) {
-                rec.image = `https://image.tmdb.org/t/p/w500${result.poster_path}`;
-              } else {
-                rec.image = "";
-              }
+            const url = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}${rec.year ? `&year=${rec.year}` : ""}`;
+            const r = await fetch(url);
+            if (r.ok) {
+              const j = await r.json();
+              const hit = j.results?.[0];
+              rec.image = hit?.poster_path ? `https://image.tmdb.org/t/p/w500${hit.poster_path}` : "";
+              if (hit && !rec.tmdbId) rec.tmdbId = hit.id;
+              if (hit && !rec.type) rec.type = hit.media_type;
+            } else {
+              rec.image = "";
             }
           } catch (e) {
             console.error(`TMDB lookup failed for ${rec.title}:`, e);
             rec.image = "";
           }
-          return rec;
-        })
-      );
-      recommendations = enriched;
-    }
+        }
+        return rec;
+      })
+    );
 
     return new Response(JSON.stringify({ recommendations }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
